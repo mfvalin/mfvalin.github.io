@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./DeMo</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">RPN_COMM/RPN_COMM_limit</a></li>
+<li><a href="#robo1">RPN_COMM/RPN_COMM_limit_2</a></li>
+<li><a href="#robo2">RPN_COMM/Use Example</a></li>
+</ul>
+<hr />
+<a name="RPN5fCOMM2fRPN5fCOMM5flimit"></a>
+<a name="robo0"></a><h2>RPN_COMM/RPN_COMM_limit [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">      integer function <strong>RPN_COMM_limit</strong>(my_id, npe, gmin, gmax, lmini,&amp;
+     &amp;     lmaxi,count, offset)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">      integer, intent(IN) ::  my_id, npe, gmin, gmax       
+      integer, intent(OUT) :: lmini,lmaxi                  
+      integer, intent(OUT) :: count(npe),offset(npe)       
+</pre>
+<p class="item_name">Notes</p>
+<pre>     old function, calls newer <a href="#robo1">RPN_COMM_limit_2</a> forcing STRICT decomposition mode
+     kept for compatibility with older versions of this library
+</pre>
+
+<hr />
+<a name="RPN5fCOMM2fRPN5fCOMM5flimit5f2"></a>
+<a name="robo1"></a><h2>RPN_COMM/RPN_COMM_limit_2 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">      integer function <strong>RPN_COMM_limit_2</strong>(my_id, npe, gmin, gmax, &amp;
+     &amp;     lmini,lmaxi,count, offset,relax)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">!  IN   my_id   "tile" ordinal along decomposition axis (0 -&gt; npe-1)
+!  IN   npe    number of "tiles" (PEs) along this dimension
+!  IN   gmin,gmax
+!              global index space along this dimension is gmin:gmax (usually 1:n)
+!  OUT  lmini,lmaxi
+!              this "tile" will cover index range lmini:lmaxi in global space
+!  OUT  count(1:npe)
+!              count(i) = number of points along this dimension for PE with ordinal I-1
+!  OUT  offset(1:npe)
+!              offset(i) = offset from gmin for PE with ordinal I-1
+!  IN   relax  decomposition mode
+!          0 : strict mode, all tiles but last one must have same dimension, 
+!              last tile may be shorter but may not have zero dimension
+!          1 : some tiles at end may be 1 shorter than tiles at beginning, 
+!              zero size not allowed for these shorter tiles
+!          2 : same as relax=1 but zero dimension tiles at end are allowed 
+!              (useful only if more PEs than points)
+!          3 : tiles with same length possibly followed by ONE shorter tile 
+!              possibly followed by ONE or MORE zero size tiles
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+<p class="item_name">Notes</p>
+<pre>     this function is totally stand alone and could eventually be moved into the rmnlib library
+     mode 2 only makes sense when one has more PEs than points
+</pre>
+
+<hr />
+<a name="RPN5fCOMM2fUse20Example"></a>
+<a name="robo2"></a><h2>RPN_COMM/Use Example [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">EXAMPLE</p>
+<pre class="source">      implicit none
+      integer, intent(IN) :: NPE
+!      integer, parameter :: NPE=6
+      integer, dimension(NPE) :: count, offset
+      integer :: my_id, gmin, gmax, lmini, lmaxi, status
+      integer :: <a href="#robo1">RPN_COMM_limit_2</a>
+      external :: <a href="#robo1">RPN_COMM_limit_2</a>
+
+      gmin = 1
+      gmax = 13
+      print 101,'NPE, gmin, gmax :',NPE,gmin,gmax
+      print 101,'relax =',0
+      status = <a href="#robo1">RPN_COMM_limit_2</a>(0, npe, gmin, gmax,lmini,lmaxi,count, offset,0)
+      print 102, '      ','   ID',' mini',' maxi',' gmin',' gmax',' stat'
+      print 101, 'pe_me=',0, lmini,lmaxi, gmin, gmax, status
+      print 101, 'count=',count
+      print 101, 'offst=',offset
+      print *, '---------------------------'
+      print 101,'NPE, gmin, gmax :',NPE,gmin,gmax
+      print 101,'relax =',1
+      status = <a href="#robo1">RPN_COMM_limit_2</a>(0, npe, gmin, gmax,lmini,lmaxi,count, offset,1)
+      print 102, '      ','   ID',' mini',' maxi',' gmin',' gmax',' stat'
+      print 101, 'pe_me=',0, lmini,lmaxi, gmin, gmax, status
+      print 101, 'count=',count
+      print 101, 'offst=',offset
+      print *, '---------------------------'
+      print 101,'NPE, gmin, gmax :',NPE,gmin,gmax
+      print 101,'relax =',2
+      status = <a href="#robo1">RPN_COMM_limit_2</a>(0, npe, gmin, gmax,lmini,lmaxi,count, offset,2)
+      print 102, '      ','   ID',' mini',' maxi',' gmin',' gmax',' stat'
+      print 101, 'pe_me=',0, lmini,lmaxi, gmin, gmax, status
+      print 101, 'count=',count
+      print 101, 'offst=',offset
+      print *, '---------------------------'
+      gmin = 1
+      gmax = 13
+      print 101,'NPE, gmin, gmax :',NPE,gmin,gmax
+      print 101,'relax =',3
+      do my_id=0,NPE-1
+        status = <a href="#robo1">RPN_COMM_limit_2</a>(my_id, npe, gmin, gmax,lmini,lmaxi,count, offset,3)
+        print 102, '      ','   ID',' mini',' maxi',' gmin',' gmax',' stat'
+        print 101, 'pe_me=',my_id, lmini,lmaxi, gmin, gmax, status
+        print 101, 'count=',count
+        print 101, 'offst=',offset
+        print *,''
+      enddo
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Thu Nov 19 2015 08:29:07
+</p>
+</div> <!-- footer -->
+</body>
+</html>

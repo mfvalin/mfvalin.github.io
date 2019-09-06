@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./boundary_clip</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">rmnlib/window clipper</a></li>
+<li><a href="#robo1">rmnlib/boundary_clip_coord_1</a></li>
+<li><a href="#robo2">rmnlib/boundary_clip_coord_2n</a></li>
+<li><a href="#robo3">rmnlib/boundary_clip_coord_n2</a></li>
+</ul>
+<hr />
+<a name="rmnlib2fwindow20clipper"></a>
+<a name="robo0"></a><h2>rmnlib/window clipper [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">Synopsis</p>
+<pre>
+ soit un groupe de 3 points P0(x0,y0), P1(x1,y1), P2(x2,y2)
+
+ un peu de geometrie basee sur les relations entre "triangles semblables"
+
+                     (x1,y1)*---------*(x0,y1)                  *(X1,Y1)
+                             \        |                        /|
+                              \       |                       / |
+                               \      |                      /  |
+             ymax  +------------*-----*--------------------+/   |
+                   |      (x2,y2)\    |(x0,y2)      (X2,Y2)*----*(X1,Y2)
+                   |              \   |                   /|    |
+                   |               \  |                  / |    |
+                   |                \ |                 /  |    |
+                   |                 \|                /   |    |
+                   |                  *(x0,y0)        /    |    |
+                   |                                 /     |    |
+                   |                         (X0,Y0)*------*----*(X1,Y0)
+                   |                                       |(X2,Y0)
+                   |                                       |
+                   |                                       |
+                   |                                       |
+                   |                                       |
+             ymin  +---------------------------------------+
+                   xmin                                 xmax
+
+  pour le segment de droite (x0,y0) ---&gt; (x1,y1)   P0 ----&gt; P1
+
+  point d'intersection (x2,y2): (intersection avec y = constante)
+
+                 y2 = constante y (ymin ou ymax)
+
+                 (x1-x0)   (y1-y0)
+                 ------- = -------
+                 (x2-x0)   (y2-y0)  (y2 = ymax ou ymin selon le cas)
+
+         donc    x2 = x0 + (x1-x0)/(y1-y0) * (y2-y0)
+
+  pour le segment de droite (X0,Y0) ---&gt; (X1,Y1)
+
+  point d'intersection (X2,Y2): (intersection avec x = constante)
+
+                 X2 = constante x (xmin ou xmax)
+
+                 (X1-X0)   (Y1-Y0)
+                 ------- = -------
+                 (X2-X0)   (Y2-Y0)  (X2 = xmax ou xmin selon le cas)
+
+         donc    Y2 = Y0 + (Y1-Y0)/(X1-X0) * (X2-X0)
+
+ recette:
+
+ (x2,y2) = (x1,y1) , on suppose que (x2,y2) est dans la fenetre
+
+ si le point (x1,y1) est au "nord" ou au "sud" de la fenetre
+   on calcule l'intersection (x2,y2) (y2 = ymin ou ymax)
+
+ si x2 est a l'exterieur de l'intervalle xmin --- xmax
+   on passe au cas "est" ou "ouest"
+   on calcule l'intersection (x2,x2)  (x2 = xmin ou xmax)
+
+ et dans ce cas, on est sur que y2 sera dans l'intervalle (ymin --- ymax)
+</pre>
+
+<hr />
+<a name="rmnlib2fboundary5fclip5fcoord5f1"></a>
+<a name="robo1"></a><h2>rmnlib/boundary_clip_coord_1 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   clip boundaries, one point, using coordinates and a window
+   point p0 is assumed to be within the clipping window
+   point p1 may be inside or outside of the clipping window
+   point p2 will be
+   - the intersection of the P0-&gt;P1 segment with the clipping window
+   - the same as P1 if P1 is inside the clipping window
+
+   p0, p1, p2 are real arrays of dimension 2. 
+   the first element is the x coordinate
+   the second element is the y coordinate
+
+   l is a real array of dimension 4
+   [ xmin, xmax, ymin, ymax]
+
+   the functions returns .true. if clipping was necessary, .false. otherwise
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">function <strong>boundary_clip_coord_1</strong>(p0,p1,p2,l) result(clipped) BIND(C,name='BoundaryClipCoord1')
+  use ISO_C_BINDING
+  implicit none
+  real, dimension(2), intent(IN)  :: p0   ! ASSUMED to be inside the window defined by l
+  real, dimension(2), intent(IN)  :: p1   ! point to check
+  real, dimension(2), intent(OUT) :: p2   ! clipped output
+  real, dimension(4), intent(IN) :: l     ! window used to clip p0 -&gt; p1 segment
+  logical :: clipped                      ! .true. if clipping occurred
+</pre>
+
+<hr />
+<a name="rmnlib2fboundary5fclip5fcoord5f2n"></a>
+<a name="robo2"></a><h2>rmnlib/boundary_clip_coord_2n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   clip boundaries, multiple points, using coordinates and a window
+   point p0 is assumed to be within the clipping window
+   point p1 may be inside or outside of the clipping window
+   point p2 will be
+   - the intersection of the P0-&gt;P1 segment with the clipping window
+   - the same as P1 if P1 is inside the clipping window
+
+   p0, p1, p2 are real arrays of dimension (2,n). 
+   element (1,i) is the x coordinate of point i
+   element (2,i) is the y coordinate of point i
+
+   clipped is an array of dimension (n)
+   clipped(i) is .true. if p0(i)-&gt;p1(i) needed to be clipped
+
+   l is a real array of dimension 4
+   [ xmin, xmax, ymin, ymax]
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">subroutine <strong>boundary_clip_coord_2n</strong>(p0,p1,p2,l,clipped,n) BIND(C,name='BoundaryClipCoord2n')
+  use ISO_C_BINDING
+  implicit none
+  real, dimension(2,n), intent(IN)  :: p0   ! ASSUMED to be inside the window defined by l
+  real, dimension(2,n), intent(IN)  :: p1   ! point to check
+  real, dimension(2,n), intent(OUT) :: p2   ! intersection with clipping window
+  real, dimension(4), intent(IN) :: l       ! window used to clip p0 -&gt; p1 segment
+  integer, intent(IN) :: n                  ! number of points
+  logical, dimension(N) :: clipped          ! .true. if clipping occurred
+</pre>
+
+<hr />
+<a name="rmnlib2fboundary5fclip5fcoord5fn2"></a>
+<a name="robo3"></a><h2>rmnlib/boundary_clip_coord_n2 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   clip boundaries, multiple points, using coordinates and a window
+   point p0 is assumed to be within the clipping window
+   point p1 may be inside or outside of the clipping window
+   point p2 will be
+   - the intersection of the P0-&gt;P1 segment with the clipping window
+   - the same as P1 if P1 is inside the clipping window
+
+   p0, p1, p2 are real arrays of dimension (n,2). 
+   element (i,1) is the x coordinate of point i
+   element (i,2) is the y coordinate of point i
+
+   clipped is an array of dimension (n)
+   clipped(i) is .true. if p0(i)-&gt;p1(i) needed to be clipped
+
+   l is a real array of dimension 4
+   [ xmin, xmax, ymin, ymax]
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">subroutine <strong>boundary_clip_coord_n2</strong>(p0,p1,p2,l,clipped,n) BIND(C,name='BoundaryClipCoordn2')
+  use ISO_C_BINDING
+  implicit none
+  real, dimension(n,2), intent(IN)  :: p0   ! ASSUMED to be inside the window defined by l
+  real, dimension(n,2), intent(IN)  :: p1   ! point to check
+  real, dimension(n,2), intent(OUT) :: p2   ! intersection with clipping window
+  real, dimension(4), intent(IN) :: l       ! window used to clip p0 -&gt; p1 segment
+  integer, intent(IN) :: n                  ! number of points
+  logical, dimension(N) :: clipped          ! .true. if clipping occurred
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Sun Mar 10 2019 21:19:00
+</p>
+</div> <!-- footer -->
+</body>
+</html>

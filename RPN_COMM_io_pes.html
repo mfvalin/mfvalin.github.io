@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./DeMo</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">RPN_COMM/io_pe  management routines for  IO PE sets</a></li>
+<li><a href="#robo1">rpn_comm/example example code</a></li>
+<li><a href="#robo2">rpn_comm/example_callback example of callback function</a></li>
+<li><a href="#robo3">rpn_comm/RPN_COMM_create_io_set</a></li>
+<li><a href="#robo4">rpn_comm/RPN_COMM_free_io_set</a></li>
+<li><a href="#robo5">rpn_comm/RPN_COMM_io_pe_bcast</a></li>
+<li><a href="#robo6">rpn_comm/RPN_COMM_io_pe_callback</a></li>
+<li><a href="#robo7">rpn_comm/RPN_COMM_io_pe_comm</a></li>
+<li><a href="#robo8">rpn_comm/RPN_COMM_io_pe_coord</a></li>
+<li><a href="#robo9">rpn_comm/RPN_COMM_io_pe_gridid</a></li>
+<li><a href="#robo10">rpn_comm/RPN_COMM_io_pe_groups</a></li>
+<li><a href="#robo11">rpn_comm/RPN_COMM_io_pe_idlist</a></li>
+<li><a href="#robo12">rpn_comm/RPN_COMM_io_pe_size</a></li>
+<li><a href="#robo13">rpn_comm/RPN_COMM_io_pe_valid_set</a></li>
+<li><a href="#robo14">rpn_comm/RPN_COMM_is_io_pe</a></li>
+<li><a href="#robo15">rpn_comm/RPN_COMM_is_valid_io_setno</a></li>
+</ul>
+<hr />
+<a name="RPN5fCOMM2fio5fpe2020management20routines20for2020IO20PE20sets"></a>
+<a name="robo0"></a><h2>RPN_COMM/io_pe  management routines for  IO PE sets [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">FUNCTION</p>
+<pre>   Create, free, manage sets of processes used to perform IO (or other) operations
+   in the RPN_COMM library (version 4.5.16 and above)
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>   M.Valin Recherche en Prevision Numerique 2015
+</pre>
+<p class="item_name">DESCRIPTION</p>
+<pre>  user callable routines / functions (output/inout arguments in UPPER CASE)
+                 CREATE / FREE
+   - setno      = <a href="#robo3">RPN_COMM_create_io_set</a>(npes,method)
+   - call         RPN_COMM_make_io_pe_list(X,Y,npes,penx,peny,method)
+   - setno      = <a href="#robo4">RPN_COMM_free_io_set</a>(setno)
+                  INFORMATION
+   - .t /.f.    = <a href="#robo15">RPN_COMM_is_valid_io_setno</a>(setno)
+   - ordinal_s  = <a href="#robo14">RPN_COMM_is_io_pe</a>(setno)
+   - ordinal_g  = <a href="#robo9">RPN_COMM_io_pe_gridid</a>(setno,n)
+   - comm       = <a href="#robo7">RPN_COMM_io_pe_comm</a>(setno)
+   - npes       = <a href="#robo12">RPN_COMM_io_pe_size</a>(setno)
+   - grps       = <a href="#robo10">RPN_COMM_io_pe_groups</a>(setno)
+   - list(:)    = <a href="#robo11">RPN_COMM_io_pe_idlist</a>(setno)
+   - coord(:,:) = <a href="#robo8">RPN_COMM_io_pe_coord</a>(setno)
+                    OPERATE
+   - ivalue     = <a href="#robo6">RPN_COMM_io_pe_callback</a>(setno,callback,argv)
+   - call         <a href="#robo5">RPN_COMM_io_pe_bcast</a>(BUFFER,count,datatype,root,setno,IERR)
+                   VALIDATION
+   - 0/-1       = RPN_COMM_check_ioset(setno, x ,y, npes, penx, peny, peme, diag)
+   - logical    = <a href="#robo13">RPN_COMM_io_pe_valid_set</a>(X,Y,npes,penx,peny,diag,method)
+
+     setno      set number, assigned at IO PE set creation time by <a href="#robo3">RPN_COMM_create_io_set</a>
+     method     PE spread method, integer, must be 0 for now
+     peme       ordinal in "GRID" of this PE
+     diag       if .true. and peme == 0, print diagnostic messages
+     npes       number of PEs in IO set
+     grps       number of "groups" ni thi IO PE set
+     comm       MPI communicator for this IO PE set (integer)
+     ordinal_s  ordinal in IO PE set communicator  (origin 0)
+     ordinal_g  ordinal in "GRID"  (origin 0)
+     list       one dimensional integer array, list(I) is the ordinal in the "GRID"
+                communicator of the Ith IO PE in set. (size of list is npes)  (origin 0)
+     coord      two dimensional integer array (npes,2) containing the X and Y coordinates
+                in the "GRID" of the IO PEs in the set.   (origin 0)
+                X coordinates in coord(:,1), Y coordinates in coord(:,2)
+     argv       "blind" argument of type(C_PTR) that will be passed to callback
+     ivalue     integer return value of callback function
+     callback   the name of a user supplied function, passed to <a href="#robo6">RPN_COMM_io_pe_callback</a>.
+                <a href="#robo6">RPN_COMM_io_pe_callback</a> MUST be called on ALL members of the IO PE set
+                but may also be called by non members of the IO set. the callback function
+                will only be called on the members of the IO set. the return value of 
+                <a href="#robo6">RPN_COMM_io_pe_callback</a> will be 0 on non members and the return value of 
+                callback on the members of the IO set. the call to callback is done as
+                ivalue = callback(argv,setno,comm,pe_me,x,y,npes)
+                pe_me is the ordinal of the PE in the IO PE set communicator (NOT "GRID")
+</pre>
+<p class="item_name">Notes</p>
+<pre>     include 'RPN_COMM.inc'
+     is necessary to get the correct interface description
+
+     the normal sequence of operations is 
+     1 - <a href="#robo3">RPN_COMM_create_io_set</a>
+     2 - get info, do operations on set "setno"
+     3 - <a href="#robo4">RPN_COMM_free_io_set</a>
+
+     for now a maximum of 16 IO PE sets may be defined at any point in time
+     (when an IO set has been freed, it does not count anymore)
+
+     RPN_COMM_make_io_pe_list and RPN_COMM_check_ioset are really internal routines,
+     users should rather call <a href="#robo13">RPN_COMM_io_pe_valid_set</a> that is intended for public use
+     and better documented
+
+     FOR MODEL DEVELOPERS:
+
+     The IO PEs distribution is done in a hopefully optimal way to maximize IO performance
+     when using a large number of nodes.
+     For output purposes, between 1 and 2 IO PEs per node is usually considered optimal.
+     For input purposes one might use more PEs per node if the input operation involves
+     heavvy computations (like horizontal interpolation).
+     If the number of PEs in the X direction is pex and the number of PEs in the Y direction
+     is pey, min(pex,pey)*min(pex,pey) is likely to be the maximum number of PEs in a set.
+     The <a href="#robo13">RPN_COMM_io_pe_valid_set</a> subroutine (totally standalone) can be used to see if
+     the requested IO PE set is possible given pex and pey.
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fexample20example20code"></a>
+<a name="robo1"></a><h2>rpn_comm/example example code [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">EXAMPLE</p>
+<pre class="source">  integer, external :: RPN_COMM_io_pe_test_callback   ! the callback function returns an integer value
+  integer setno,nio,me_io,setno2,setno3,status
+  integer, dimension(1), target :: argv               ! the argument list for the callback function
+  integer, dimension(:,:), pointer :: iopelist        ! will receive a coordinate list
+  integer, dimension(1) :: tbcst                      ! this will be broadcast in the test
+</pre>
+<p class="item_name">EXAMPLE</p>
+<pre class="source">  setno = <a href="#robo3">RPN_COMM_create_io_set</a>(nio+2,0)                   ! create a set of IO PEs containing nio+2 members
+  me_io = <a href="#robo14">RPN_COMM_is_io_pe</a>(setno)                          ! is this PE a member of this IO PE set ?
+  if(me_io .ne. -1) then
+    print *,"I am a proud IO pe !"                          ! YES it is
+  else
+    print *,"I am a lazy  NON-IO pe !"                      ! NO it is not
+  endif
+  print *,"set number, size of set='",setno,<a href="#robo12">RPN_COMM_io_pe_size</a>(setno)         ! get size of this IO PE set
+  setno2 = <a href="#robo3">RPN_COMM_create_io_set</a>(nio,0)                                       ! crete another set containing nio PEs
+  print *,"set number, size of set='",setno2,<a href="#robo12">RPN_COMM_io_pe_size</a>(setno2)       ! get size of this other IO PE set (should be nio+2)
+  setno = <a href="#robo4">RPN_COMM_free_io_set</a>(setno)                                          ! delete IO set
+  print *,'DEBUG: freed IO set ',setno
+  print *,"set number, size of set='",setno,<a href="#robo12">RPN_COMM_io_pe_size</a>(setno)         ! this should return -1
+  setno = <a href="#robo3">RPN_COMM_create_io_set</a>(nio,0)                                        ! re create IO PE set, this time with nio PEs
+  print *,"set number, size of set='",setno,<a href="#robo12">RPN_COMM_io_pe_size</a>(setno)         ! this should return nio now
+  setno3 = <a href="#robo3">RPN_COMM_create_io_set</a>(nio-1,0)                                     ! crete another set containing nio-1 PEs
+  print *,"set number, size of set='",setno3,<a href="#robo12">RPN_COMM_io_pe_size</a>(setno3)       ! this should return nio-1
+  argv(1) = pe_me                                                              ! argument array for callback function
+  status = <a href="#robo6">RPN_COMM_io_pe_callback</a>(setno3,RPN_COMM_io_pe_test_callback,C_LOC(argv(1)))    ! call to callback function(see example below)
+  print *,"after callback, status,argv=",status,argv(1)                        ! status 0 from non members of IO set, return of callback function on members
+  iopelist =&gt; <a href="#robo8">RPN_COMM_io_pe_coord</a>(setno3)                                     ! get grid coordinates of PEs in IO set setno3
+  print *,"PE list x=",iopelist(:,1)                                           ! row 1, X coordinates in "GRID"
+  print *,"PE list y=",iopelist(:,2)                                           ! row 2, Y coordinates in "GRID"
+  tbcst = pe_me
+  if(<a href="#robo14">RPN_COMM_is_io_pe</a>(setno3) .ne. -1)then  ! part of the set only, bcst pe_me of highest rank in set
+    call <a href="#robo5">RPN_COMM_io_pe_bcast</a>(tbcst,1,'MPI_INTEGER',<a href="#robo12">RPN_COMM_io_pe_size</a>(setno3)-1,setno3,status) 
+!   root for broadcast is <a href="#robo12">RPN_COMM_io_pe_size</a>(setno3)-1, get "GRID" ordinal of PE with highest rank (last PE) in IO set
+!   root for broadcast 0 would have returned the "GRID" ordinal of first (lowest rank) PE in set
+    print *,'tbcst after broadcast',tbcst                                      ! and the answer is ...
+  endif
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fexample5fcallback20example20of20callback20function"></a>
+<a name="robo2"></a><h2>rpn_comm/example_callback example of callback function [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">EXAMPLE</p>
+<pre class="source">function RPN_COMM_io_pe_test_callback(argv,setno,comm,me,x,y,npe) result(status)  ! demo callback function
+! this function will only be called on members of the IO PE set (setno)
+  use ISO_C_BINDING
+  implicit none
+  integer, intent(IN) :: setno,comm,me,npe      ! set number, MPI communicator of this IO PE set, this PE's ordinal in set
+  integer, dimension(npe), intent(IN) :: x,y
+  type(C_PTR), intent(IN) :: argv               ! "blind pointer" to argument list
+!
+  integer :: status
+  integer, dimension(:), pointer :: argvf        ! what the "blind pointer" will be mapped into
+!
+  call C_F_POINTER(argv,argvf,[1])                                ! transform C pointer into Fortran pointer
+  print *,"IO PE CALLBACK set, me, argument = ",setno,me,argvf(1) ! an integer array of dimension 1 was expected
+  print *,"CALLBACK x=",x                                         ! list of X "GRID" coordinates
+  print *,"CALLBACK y=",y                                         ! list of Y "GRID" coordinates
+  argvf(1) = -(100 +argvf(1))                                     ! we modify the argument list (optional)
+  status = -123                                                   ! status to be returned to caller on this PE
+  return
+end
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fcreate5fio5fset"></a>
+<a name="robo3"></a><h2>rpn_comm/RPN_COMM_create_io_set [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_create_io_set</strong>(npes,method) result(setno)    ! create a set of IO PEs
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN)  :: npes        ! number of IO PEs desired in set ( set size will be min(npes,pe_nx,pe_ny) )
+  integer, intent(IN)  :: method      ! method 0 is the only one supported for the time being
+  integer :: setno                    ! set number created ( -1 if creation failed )
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5ffree5fio5fset"></a>
+<a name="robo4"></a><h2>rpn_comm/RPN_COMM_free_io_set [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_free_io_set</strong>(setno) result(freed)    ! delete a set of IO PEs created by <a href="#robo3">RPN_COMM_create_io_set</a>
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno          ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer :: freed                      ! setno if operation succeeded, -1 if it failed
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fbcast"></a>
+<a name="robo5"></a><h2>rpn_comm/RPN_COMM_io_pe_bcast [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine <strong>RPN_COMM_io_pe_bcast</strong>(buffer,count,datatype,root,setno,ierr) ! cannot easily publish interface because of buffer
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno                ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer, intent(IN) :: count                ! number of elements of type datatype
+  integer, intent(INOUT), dimension(*) :: buffer   ! data to be broadcast
+  character (len=*), intent(IN) :: datatype   ! datatype RPN_COMM style
+  integer, intent(IN) :: root                 ! root PE in set for broadcast (typically 0)
+  integer, intent(OUT) :: ierr                ! status upon completion
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fcallback"></a>
+<a name="robo6"></a><h2>rpn_comm/RPN_COMM_io_pe_callback [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_callback</strong>(setno,callback,argv) result(status) 
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno          ! set number as returned by create_ioset
+  type(C_PTR) :: argv                   ! "pickled" arguments to callback
+  integer, external :: callback         ! user routine to be called
+  integer :: status                   
+</pre>
+<p class="item_name">Notes</p>
+<pre> callback to be executed only on members of an IO PE set (usually called by all PEs on grid)
+ if this PE is not a member of the IO set, nothing happens, status = 0
+ if the IO set is invalid, nothing happens, status = -1
+ if this PE is a member of the set, callback is called and its return value is put into status
+
+ the calling sequence of callback is as follows
+ status = callback(argv,setno,comm,ordinal,x,y,npe)
+ type(C_PTR) :: argv 
+ integer :: setno         ! IO PE set number
+ integer :: comm          ! communicator used by this IO PE set
+ integer :: ordinal       ! ordinal of this PE in the set
+ integer, dimension(npe) :: x  ! x grid coordinates for IO PEs in this set
+ integer, dimension(npe) :: y  ! y grid coordinates for IO PEs in this set
+ integer :: npe           ! number of PEs in this set
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fcomm"></a>
+<a name="robo7"></a><h2>rpn_comm/RPN_COMM_io_pe_comm [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_comm</strong>(setno) result(communicator)     ! get communicator of IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno          ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer :: communicator               ! communicator for IO PE set if a member, null communicator otherwise
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fcoord"></a>
+<a name="robo8"></a><h2>rpn_comm/RPN_COMM_io_pe_coord [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_coord</strong>(setno) result(list)     ! get x and y coordinates in grid of PEs in IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno                  ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer, dimension(:,:), pointer :: list      ! list of IO PE set, null pointer if set is not valid
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fgridid"></a>
+<a name="robo9"></a><h2>rpn_comm/RPN_COMM_io_pe_gridid [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_gridid</strong>(setno,n) result(ordinal)     ! ordinal in "grid" of PE n of IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno         ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer, intent(IN) :: n             ! ordinal of PE for which ordinal in grid is sought (ORIGIN 0)
+  integer :: ordinal                   ! ordinal in "grid" if n not larger than IO set size, -1 otherwise
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fgroups"></a>
+<a name="robo10"></a><h2>rpn_comm/RPN_COMM_io_pe_groups [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_groups</strong>(setno) result(ngroups)     ! get number of groups in IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno          ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer :: ngroups                    ! ngroups of IO PE set, -1 if set is not valid
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fidlist"></a>
+<a name="robo11"></a><h2>rpn_comm/RPN_COMM_io_pe_idlist [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_idlist</strong>(setno) result(idlist)     ! get list of PE ordinals in IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno                  ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer, dimension(:), pointer :: idlist        ! list of IO PE set, null pointer if set is not valid
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fsize"></a>
+<a name="robo12"></a><h2>rpn_comm/RPN_COMM_io_pe_size [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_size</strong>(setno) result(population)     ! get size of IO set setno
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno          ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer :: population                 ! population of IO PE set, -1 if set is not valid
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fio5fpe5fvalid5fset"></a>
+<a name="robo13"></a><h2>rpn_comm/RPN_COMM_io_pe_valid_set [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_io_pe_valid_set</strong>(x,y,npes,penx,peny,diag,method) result(status)       
+!  check if this IO PE configuration is possible
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    integer, dimension(npes), intent(OUT) :: x    ! x coordinates of PEs in set
+    integer, dimension(npes), intent(OUT) :: y    ! y coordinates of PEs in set
+    integer, intent(IN) :: npes                   ! number of PEs in set
+    integer, intent(IN) :: penx, peny             ! number of PEs along x and y in PE grid
+    integer, intent(IN) :: method                 ! fill method
+    logical, intent(IN) :: diag                   ! if .true. print IO PE map and diagnostics
+    integer :: status                             ! RPN_COMM_OK or RPN_COMM_ERROR
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+<p class="item_name">Notes</p>
+<pre>   some error messages are printed in case of error
+   diagnostics include a map of IO PEs
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fis5fio5fpe"></a>
+<a name="robo14"></a><h2>rpn_comm/RPN_COMM_is_io_pe [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_is_io_pe</strong>(setno) result(ordinal)     ! is this PE part of IO set setno ? 
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno         ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  integer :: ordinal                   ! ordinal in IO PE set if a member, -1 if not
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fis5fvalid5fio5fsetno"></a>
+<a name="robo15"></a><h2>rpn_comm/RPN_COMM_is_valid_io_setno [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>RPN_COMM_is_valid_io_setno</strong>(setno) result(valid)     ! is this IO set number valid ?
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN) :: setno         ! set number as returned by <a href="#robo3">RPN_COMM_create_io_set</a>
+  logical :: valid                     ! .true. if set is valid, .false. otherwise
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Fri Nov 06 2015 09:50:29
+</p>
+</div> <!-- footer -->
+</body>
+</html>

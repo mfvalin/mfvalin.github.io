@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./DeMo</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">rmnlib/convert_ip123_int</a></li>
+<li><a href="#robo1">rmnlib/FLOAT_IP</a></li>
+<li><a href="#robo2">rmnlib/decode_ip_0</a></li>
+<li><a href="#robo3">rmnlib/decode_ip_1</a></li>
+<li><a href="#robo4">rmnlib/decode_ip_2</a></li>
+<li><a href="#robo5">rmnlib/decode_ip_3</a></li>
+<li><a href="#robo6">rmnlib/encode_ip_0</a></li>
+<li><a href="#robo7">rmnlib/encode_ip_1</a></li>
+<li><a href="#robo8">rmnlib/encode_ip_2</a></li>
+<li><a href="#robo9">rmnlib/encode_ip_3</a></li>
+</ul>
+<hr />
+<a name="rmnlib2fconvert5fip1235fint"></a>
+<a name="robo0"></a><h2>rmnlib/convert_ip123_int [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">module <strong>convert_ip123_int</strong>
+use ISO_C_BINDING
+implicit none
+</pre>
+<p class="item_name">DESCRIPTION</p>
+<pre>  set of generic IP123 conversion functions (IP123 from RPN standard files)
+  (ip1,ip2,ip3) triplet &lt;-&gt; 3 (real value,kind) pairs
+
+  the Fortran user will call the generic functions
+  - encode_ip   (real value,kind) pairs -&gt; (ip1,ip2,ip3) triplet
+  - decode_ip   (ip1,ip2,ip3) triplet   -&gt; (real value,kind) pairs
+  the kind of arguments will determine which specific conversion function will be used
+  (see description of specific functions)
+  <a href="#robo6">encode_ip_0</a>, <a href="#robo7">encode_ip_1</a>, <a href="#robo8">encode_ip_2</a>, <a href="#robo9">encode_ip_3</a>
+  <a href="#robo2">decode_ip_0</a>, <a href="#robo3">decode_ip_1</a>, <a href="#robo4">decode_ip_2</a>, <a href="#robo5">decode_ip_3</a>
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013, 2014
+</pre>
+<p class="item_name">EXAMPLES</p>
+<pre class="source">!   use ISO_C_BINDING
+!   implicit none
+!   include 'convert_ip123.inc'
+!   integer :: ip1, ip2, ip3, stat
+!   integer, dimension(3) :: vip123
+!   integer :: k1, k2, k3
+!   integer, dimension(3) :: vk123
+!   real    :: v1, v2, v3
+!   real, dimension(3)    :: v123
+!   type(<a href="#robo1">FLOAT_IP</a>) :: RP1,RP2,RP3
+!   type(<a href="#robo1">FLOAT_IP</a>), dimension(3) :: VRP123
+!
+!   stat = encode_ip(ip1,ip2,ip3,v1,k1,v2,k2,v3,k3)  ! everything explicit (<a href="#robo8">encode_ip_2</a>)
+!   stat = encode_ip(vip123,v123,vk123)              ! vector version of above (<a href="#robo9">encode_ip_3</a>)
+!   stat = encode_ip(ip1,ip2,ip3,RP1,RP2,RP3)        ! ip &lt;- multiple <a href="#robo1">FLOAT_IP</a>  (<a href="#robo6">encode_ip_0</a>)
+!   stat = encode_ip(vip123,VRP123)                  ! vector version of above (<a href="#robo7">encode_ip_1</a>)
+!
+!   stat = decode_ip(v1,k1,v2,k2,v3,k3,ip1,ip2,ip3)  ! everything explicit (<a href="#robo4">decode_ip_2</a>)
+!   stat = decode_ip(v123,vk123,vip123)              ! vector version of above (<a href="#robo5">decode_ip_3</a>)
+!   stat = decode_ip(RP1,RP2,RP3,ip1,ip2,ip3)        ! ip -&gt; multiple <a href="#robo1">FLOAT_IP</a>  (<a href="#robo2">decode_ip_0</a>)
+!   stat = decode_ip(VRP123,vip123)                  ! vector version of above (<a href="#robo3">decode_ip_1</a>)
+!
+! program testip   ! very simple example of time range coding
+!   use ISO_C_BINDING
+!   implicit none
+!   include 'convert_ip123.inc'
+!   integer err
+!   type(<a href="#robo1">FLOAT_IP</a>) :: RP1,RP2,RP3
+!   integer :: ip1, ip2, ip3
+!   RP1%lo=10.   ! 10 mb
+!   RP1%hi=10.   ! 10 mb  hi == lo , no range
+!   RP1%kind=KIND_PRESSURE
+!   RP2%lo=6.    ! 6 hours
+!   RP2%hi=16.   ! 16 hours
+!   RP2%kind=KIND_HOURS
+!   RP3%lo=0.    ! there is a range so an invalid RP3 is OK
+!   RP3%hi=0.
+!   RP3%kind=-1
+!   err= encode_ip(IP1,IP2,IP3,RP1,RP2,RP3)
+!   print*, err,IP1,IP2,IP3
+!   stop
+! end
+</pre>
+<p class="item_name">NOTES</p>
+<p>  the FORTRAN user must include
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p>  in order to access this package
+</p>
+
+<p>  individual IP to real value + kind conversions are performed by function convip_plus
+  real value to formatted string encoding is performed by function value_to_string
+</p>
+
+<hr />
+<a name="rmnlib2fFLOAT5fIP"></a>
+<a name="robo1"></a><h2>rmnlib/FLOAT_IP [ type ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ type ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">type, BIND(C)  :: <strong>FLOAT_IP</strong>
+real(C_FLOAT)  :: lo         ! low bound
+real(C_FLOAT)  :: hi         ! high bound
+integer(C_INT) :: kind       ! type code (see table below)
+end type
+</pre>
+<p class="item_name">TABLES</p>
+<pre> kind     name              description                  range of values
+
+   0  KIND_ABOVE_SEA   height (m) above mean sea level (-20,000 -&gt; 100,000)
+   1  KIND_SIGMA       sigma coordinates               (0.0 -&gt; 1.0)
+   2  KIND_PRESSURE    pressure (mb)                   (0 -&gt; 1100)
+   3  KIND_ARBITRARY   arbitrary number, no units      (-4.8e8 -&gt; 1.0e10)
+   4  KIND_ABOVE_GND   height (m) above ground         (-20,000 -&gt; 100,000)
+   5  KIND_HYBRID      hybrid coordinates              (0.0 -&gt; 1.0)
+   6  KIND_THETA       theta coordinates               (1 -&gt; 200,000)
+  10  KIND_HOURS       time (hours)                    (0.0 -&gt; 1.0e10)
+  15  KIND_SAMPLES     reserved (integer value)        (0 -&gt; 1 999 999)
+  17  KIND_MTX_IND     conversion matrix x subscript)  (1.0 -&gt; 1.0e10)
+                       (shared with kind=1 
+  21  KIND_M_PRES      pressure-meters                 (0 -&gt; 1,000,000) fact=1E+4
+                       (shared with kind=5)
+
+ return FLAGS for encode/decode functions (more than one flag may be set)
+  CONVERT_OK     ( 0 = no FLAG set)
+  CONVERT_GUESS  (= CONVERT_GOOD_GUESS || CONVERT_BAD_GUESS || CONVERT_TERRIBLE_GUESS)
+  CONVERT_GOOD_GUESS
+  CONVERT_BAD_GUESS
+  CONVERT_TERRIBLE_GUESS
+  CONVERT_WARNING
+  CONVERT_ERROR
+</pre>
+<p class="item_name">NOTES</p>
+<p>  the FORTRAN user must include
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p>  in order to use this derived type and the symbolic names for kind
+</p>
+
+<hr />
+<a name="rmnlib2fdecode5fip5f0"></a>
+<a name="robo2"></a><h2>rmnlib/decode_ip_0 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>decode_ip_0</strong>(RP1,RP2,RP3,IP1V,IP2V,IP3V) result(status) BIND (C,name='DecodeIp')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT), value, intent(IN)  :: IP1V,IP2V,IP3V
+  type(<a href="#robo1">FLOAT_IP</a>), intent(OUT) :: RP1,RP2,RP3
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> produce valid (real value,kind) pairs from (ip1,ip2,ip3) triplet
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>  ip1/2/3 should be encoded "new style" but old style encoding is accepted
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>  RP1 will contain a level (or a pair of levels in atmospheric ascending order) in the atmosphere
+  RP2 will contain a time (or a pair of times in ascending order)
+  RP3%hi will be the same as RP3%lo (if RP1 or RP2 contains a pair, RP3 is ignored)
+</pre>
+<p class="item_name">RESULT</p>
+<pre>   CONVERT_ERROR          error, (ip1 not level, ip2 not time, etc...)
+   CONVERT_OK             everything is OK
+   CONVERT_GOOD_GUESS     old style ip1 and/or ip2 are present
+   CONVERT_BAD_GUESS      old style ip3, interpreted as time
+   CONVERT_TERRIBLE_GUESS old style ip3, interpreted as arbitrary code
+
+ in case of error, RP1/2/3 are undefined (may contain anything)
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013
+</pre>
+<p class="item_name">NOTES</p>
+<ul><li> this function is C interoperable
+</li>
+<li> some reordering may take place when RP1 or RP2 contains a pair
+</li>
+<li> levels: ip1 will be lower in atmosphere than ip2
+</li>
+<li> times:  ip2 will be the end of the time range, ip3 will be the start of the time range
+</li>
+<li> ip1 not a level or ip2 not a time will be flagged as an error
+</li>
+<li> RP1 and RP2 both containing a range will be flagged as an error
+</li>
+<li> in case of error, ip1,2,3 will be returned as -1
+</li>
+</ul>
+<p> the FORTRAN user must
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p> in order to access this function
+</p>
+
+<hr />
+<a name="rmnlib2fdecode5fip5f1"></a>
+<a name="robo3"></a><h2>rmnlib/decode_ip_1 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>decode_ip_1</strong>(RP,IP) result(status) BIND (C,name='DecodeIp_v')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT), dimension(3), intent(IN)  :: IP
+  type(<a href="#robo1">FLOAT_IP</a>), dimension(3), intent(OUT) :: RP
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> vector version of <a href="#robo2">decode_ip_0</a>
+</pre>
+<p class="item_name">RESULT</p>
+<pre> same as <a href="#robo2">decode_ip_0</a>
+</pre>
+<p class="item_name">NOTES</p>
+<p> (see <a href="#robo2">decode_ip_0</a>) 
+</p>
+
+<hr />
+<a name="rmnlib2fdecode5fip5f2"></a>
+<a name="robo4"></a><h2>rmnlib/decode_ip_2 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>decode_ip_2</strong>(RP1,kind1,RP2,kind2,RP3,kind3,IP1V,IP2V,IP3V) result(status) BIND(C,name='ConvertIPtoPK')
+implicit none 
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  real(C_FLOAT),        intent(OUT)  :: RP1,RP2,RP3
+  integer(C_INT),        intent(OUT) :: kind1,kind2,kind3
+  integer(C_INT), value, intent(IN)  :: IP1V,IP2V,IP3V
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> decode ip1/2/3 into three (value,kind) pairs
+ explicit, independent (ip) to (rp,kind) conversion
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>  IP1V,IP2V,IP3V IP values to be decoded
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>  RP1,kind1  result of IP1V decoding
+  RP2,kind2  result of IP2V decoding
+  RP3,kind3  result of IP3V decoding
+</pre>
+<p class="item_name">RESULT</p>
+<pre>   CONVERT_OK           everything is OK
+   CONVERT_ERROR        error (bad kind, ip1 not a level, etc ....)
+   CONVERT_WARNING      coding convention violations
+   CONVERT_GOOD_GUESS   old style ip1 and/or ip2 are present
+   CONVERT_BAD_GUESS    old style ip3, interpreted as time
+   CONVERT_TERRIBLE_GUESS old style ip3, interpreted as arbitrary code
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013
+</pre>
+<p class="item_name">NOTES</p>
+<ul><li> this function is C interoperable
+</li>
+<li> in case of error, (value,kind) pairs are undefined (may contain anything)
+</li>
+</ul>
+<p> the FORTRAN user must
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p> in order to access this function
+</p>
+
+<hr />
+<a name="rmnlib2fdecode5fip5f3"></a>
+<a name="robo5"></a><h2>rmnlib/decode_ip_3 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>decode_ip_3</strong>(RP,kind,IP) result(status) BIND(C,name='ConvertIPtoPK_v')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  real(C_FLOAT),  dimension(3), intent(OUT) :: RP
+  integer(C_INT), dimension(3), intent(OUT) :: kind
+  integer(C_INT), dimension(3), intent(IN)  :: IP
+</pre>
+<p class="item_name">SUMMARY</p>
+<p class="item_name">RESULT</p>
+<pre> same as <a href="#robo4">decode_ip_2</a>
+</pre>
+<p class="item_name">NOTES</p>
+<p> see <a href="#robo4">decode_ip_2</a>
+</p>
+
+<hr />
+<a name="rmnlib2fencode5fip5f0"></a>
+<a name="robo6"></a><h2>rmnlib/encode_ip_0 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"> FUNCTION <strong>encode_ip_0</strong>(IP1,IP2,IP3,RP1,RP2,RP3) RESULT(status) BIND (C,name='EncodeIp')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT), intent(OUT) :: IP1,IP2,IP3
+  type(<a href="#robo1">FLOAT_IP</a>), intent(IN)  :: RP1,RP2,RP3
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> produce a valid (ip1,ip2,ip3) triplet from (real value,kind) pairs
+</pre>
+<p class="item_name">INPUTS</p>
+<pre> RP1 must contain a level (or a pair of levels) in the atmosphere
+ RP2 must contain  a time (or a pair of times)
+ RP3 may contain anything, RP3%hi will be ignored (if RP1 or RP2 contains a pair, RP3 is ignored)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre> IP1,IP2,IP3 will contain the encoded values in case of success, and are undefined otherwise
+</pre>
+<p class="item_name">RESULT</p>
+<pre> the function returns CONVERT_ERROR in case of error, CONVERT_OK otherwise
+</pre>
+<p class="item_name">NOTES</p>
+<ul><li> this function is C interoperable
+</li>
+<li> reordering may happen if RP1 or RP2 contain a pair of values
+</li>
+<li> levels: ip1 will be lower in atmosphere than ip2
+</li>
+<li> times:  ip2 will be the end of the time range, ip3 will be the start of the time range
+</li>
+<li> RP1 not a level or RP2 not a time will be flagged as an error
+</li>
+<li> RP1 and RP2 both containing a range will be flagged as an error
+</li>
+<li> in case of error, one or more of ip1,2,3 may be returned as -1
+</li>
+</ul>
+<p> the FORTRAN user must
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p> in order to access this function
+</p>
+
+<hr />
+<a name="rmnlib2fencode5fip5f1"></a>
+<a name="robo7"></a><h2>rmnlib/encode_ip_1 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>encode_ip_1</strong>(IP,RP) result(status) BIND (C,name='EncodeIp_v')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT), dimension(3), intent(OUT) :: IP
+  type(<a href="#robo1">FLOAT_IP</a>), dimension(3), intent(IN)  :: RP
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> vector version of <a href="#robo6">encode_ip_0</a>
+</pre>
+<p class="item_name">RESULT</p>
+<pre> same as <a href="#robo6">encode_ip_0</a>
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013
+</pre>
+<p class="item_name">NOTES</p>
+<p> (see <a href="#robo6">encode_ip_0</a>) 
+</p>
+
+<hr />
+<a name="rmnlib2fencode5fip5f2"></a>
+<a name="robo8"></a><h2>rmnlib/encode_ip_2 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>encode_ip_2</strong>(IP1,IP2,IP3,P1,kkind1,P2,kkind2,P3,kkind3) result(status) BIND(C,name='ConvertPKtoIP')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT),        intent(OUT) :: IP1,IP2,IP3
+  real(C_FLOAT), value, intent(IN)   :: P1,P2,P3
+  integer(C_INT), value, intent(IN)  :: kkind1,kkind2,kkind3
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> encode three (value,kind) pairs into three ip values
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>  P1,kkind1 must be a level
+  P2,kkind2 should be a time but a level is accepted (and flagged as a WARNING)
+  P3,kkind3 may be anything
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>  IP1,IP2,IP3 will contain the encoded values in case of success, and are undefined otherwise
+</pre>
+<p class="item_name">RESULT</p>
+<pre>     CONVERT_OK           everything is OK
+     CONVERT_ERROR        error (kind1 not a level, kind2 not level or time)
+     CONVERT_WARNING      coding convention error, corrected
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013
+</pre>
+<p class="item_name">NOTES</p>
+<ul><li> this function is C interoperable
+</li>
+<li> tolerated coding deviations: kind2 a level instead of a time (will be pushed to position 3 and flagged as warning)
+</li>
+<li> ip1/ip3 forced to the proper atmospheric ascending order coding (not flagged as warning)
+</li>
+<li> ip2/ip3 forced to proper descending order (not flagged as warning)
+</li>
+<li> in case of error, the contents of ip1/2/3 is undefined (possibly -1)
+</li>
+</ul>
+<p> the FORTRAN user must
+</p>
+<pre>    use ISO_C_BINDING
+    include 'convert_ip123.inc'
+</pre>
+<p> in order to access this function
+</p>
+
+<hr />
+<a name="rmnlib2fencode5fip5f3"></a>
+<a name="robo9"></a><h2>rmnlib/encode_ip_3 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function <strong>encode_ip_3</strong>(IP,RP,kind) result(status) BIND(C,name='ConvertPKtoIP_v')
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer(C_INT) :: status
+  integer(C_INT), dimension(3), intent(OUT) :: IP
+  real(C_FLOAT), dimension(3), intent(IN)   :: RP
+  integer(C_INT), dimension(3), intent(IN)  :: kind
+</pre>
+<p class="item_name">SUMMARY</p>
+<pre> vector version of <a href="#robo8">encode_ip_2</a> (ConvertPKtoIP)
+</pre>
+<p class="item_name">RESULT</p>
+<pre> same as <a href="#robo8">encode_ip_2</a>
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin 2013
+</pre>
+<p class="item_name">NOTES</p>
+<p> see <a href="#robo8">encode_ip_2</a>
+</p>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Thu Nov 19 2015 08:43:14
+</p>
+</div> <!-- footer -->
+</body>
+</html>

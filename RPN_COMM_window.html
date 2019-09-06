@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./DeMo</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">rpn_comm/windows  simplified/restricted version of MPI one sided communications</a></li>
+<li><a href="#robo1">rpn_comm/DEMO demo code for one sided request/reply</a></li>
+<li><a href="#robo2">rpn_comm/RPN_COMM_i_get_r read a remote one sided communication window</a></li>
+<li><a href="#robo3">rpn_comm/RPN_COMM_i_win_check check if a one sided communication window is "exposed"</a></li>
+<li><a href="#robo4">rpn_comm/RPN_COMM_i_win_close close a one sided communication window</a></li>
+<li><a href="#robo5">rpn_comm/RPN_COMM_i_win_create create a one sided primary communication window</a></li>
+<li><a href="#robo6">rpn_comm/RPN_COMM_i_win_create_secondary create a one sided secondary communication window</a></li>
+<li><a href="#robo7">rpn_comm/RPN_COMM_i_win_free free a one sided communication window</a></li>
+<li><a href="#robo8">rpn_comm/RPN_COMM_i_win_get_l read a local one sided communication window</a></li>
+<li><a href="#robo9">rpn_comm/RPN_COMM_i_win_get_ptr get data pointer associated to a one sided communication window</a></li>
+<li><a href="#robo10">rpn_comm/RPN_COMM_i_win_get_size get number of elements in primary window</a></li>
+<li><a href="#robo11">rpn_comm/RPN_COMM_i_win_get_size get size of secondary window</a></li>
+<li><a href="#robo12">rpn_comm/RPN_COMM_i_win_getacc_r get/accumulate into a remote one sided communication window</a></li>
+<li><a href="#robo13">rpn_comm/RPN_COMM_i_win_group control membership of get and put groups for this PE and this window</a></li>
+<li><a href="#robo14">rpn_comm/RPN_COMM_i_win_open open a one sided communication window</a></li>
+<li><a href="#robo15">rpn_comm/RPN_COMM_i_win_oper</a></li>
+<li><a href="#robo16">rpn_comm/RPN_COMM_i_win_post post a "shopping list"</a></li>
+<li><a href="#robo17">rpn_comm/RPN_COMM_i_win_put_l write into a local one sided communication window</a></li>
+<li><a href="#robo18">rpn_comm/RPN_COMM_i_win_put_r write into a remote one sided communication window</a></li>
+<li><a href="#robo19">rpn_comm/RPN_COMM_i_win_valid check if a one sided communication window is valid</a></li>
+</ul>
+<hr />
+<a name="rpn5fcomm2fwindows2020simplified2frestricted20version20of20MPI20one20sided20communications"></a>
+<a name="robo0"></a><h2>rpn_comm/windows  simplified/restricted version of MPI one sided communications [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">DESCRIPTION</p>
+<pre>   This is a simplified and restricted version of MPI-2 one sided communications.
+
+   When creating the "communication window", some attributes are 
+   determined for said window and will not change during its life.
+   1 - the MPI communicator
+   2 - the MPI data type of the elements contained in the window
+   3 - the size of the window (in number of elements)
+   4 - an array large enough to contain these elements
+       (this array will either be supplied by the caller or allocated internally.
+
+   all further operations refer to the window by its "identifier" 
+   Fortran type : type(rpncomm_window)  (include 'RPN_COMM_types.inc')
+
+   the window creation is a COLLECTIVE operation, all members of the communicator group
+   must call RPN_COMM_i_win_create
+
+   "exposing" a window and terminating the "exposure" of a window are also a COLLECTIVE operation
+
+   remote get/put operations, i.e. sending read/write requests targeting the communication
+   window belonging to a remote PE may only happen when the window is "exposed"
+   remote operations are NOT ALLOWED when the window is "not exposed"
+
+   two modes of one sided communication are available.
+   - active mode
+      a) for the whole communicator group  (fence)
+      b) for a subset of the communicator group (scales better when said group is large)
+         (start/complete/post/wait)
+   - passive mode
+   this mode is selected when calling the routine that "exposes" the communication window
+
+   local get/put operations, i.e. reading/writing from/into the window
+   belonging the local PE may only happen when the window is "not exposed"
+   local operations are NOT ALLOWED whe the window is "exposed" as the result of
+   such an operation would be "undefined"
+
+   a typical sequence of operations would be
+   1 - create a one sided communication window (COLLECTIVE operation)
+    repeat as needed
+    {
+      2a - modify the local copy of the window (if and as needed)
+      2b - "expose" the window and select active or passive mode (COLLECTIVE operation)
+      2c - perform get/put operations targeting remote PEs (as needed on each PE)
+      2d - "end exposing" the window (COLLECTIVE operation)
+      2e - get modifications from the local copy of the window (if and as needed)
+    }
+   3 - free the one sided communication window (COLLECTIVE operation)
+
+   window creation/destruction : RPN_COMM_i_win_create, RPN_COMM_i_win_create_secondary, RPN_COMM_i_win_free
+   window status queries       : RPN_COMM_i_valid_win, RPN_COMM_i_win_check
+   window info queries         : RPN_COMM_i_win_get_ptr, RPN_COMM_i_win_get_size
+   window "exposition"         : RPN_COMM_i_win_open, RPN_COMM_i_win_close
+   window get operations       : RPN_COMM_i_win_get_r, RPN_COMM_i_win_get_l
+   window put operations       : RPN_COMM_i_win_put_r, RPN_COMM_i_win_put_l
+
+  -------------- one sided request/reply system (RPN_COMM_i_win_post) --------------
+
+  in this special case, two (2) MPI one sided windows are used in internal type rpncomm_windef
+
+  the primary window MUST be created by a call to RPN_COMM_i_win_create
+    the storage associated with the primary window may be allocated by the user or internally.
+
+  the secondary window MUST be created by a call to RPN_COMM_i_win_create_secondary after creation
+    of rpncomm_window by a previous call to RPN_COMM_i_win_create.
+  (the storage associated with the secondary window  will be allocated internally)
+
+  primary window layout for request/reply  on PE with ordinal PEK  (client)
+
+  +-------------+-------------------+-------------------------------------+-------------------+--------------------
+  |             |  request to PEJ   |                                     |  reply from PEJ   |
+  +-------------+-------------------+-------------------------------------+-------------------+--------------------
+                ^                                                         ^
+        offseti |                                                 offseto |
+                &lt;--    n_in       --&gt;                                     &lt;--    n_out     --&gt;
+
+
+  secondary window layout for request/reply on PE with ordinal PEJ  (supplier)
+
+  +-----------------+-----------------+.............+-----------------+.............+-----------------+
+  | request 1       |  request 2      |             |  request n      |             +  request MAXREQ |
+  +-----------------+-----------------+.............+-----------------+.............+-----------------+
+
+  request format : 5 integers (PEK, offseti, n_in, offseto, n_out)  (request from PEK)
+  request 1 is special : (last valid request, 0, 0, 0, 0) (initial value of last valid request is 1)
+  PE ordinals are ranks in the communicator associated with both primary and secondary windows
+
+  PEJ is expected to "get" n_in words at displacement offseti in primary window of PEK
+  PEJ is expected to "put" n_out words at displacement offseto in primary window of PEK
+  a "word" may be anything having the size of MPI_INTEGER (integer, real, ...)
+
+  typical sequence of operations for request/reply:
+
+  1 - call RPN_COMM_i_win_open(some_window,.false.,ierr)
+  2 - call RPN_COMM_i_win_post(some_window,pe(:),offseti(:),nelemi(:),offseto(:),nelemo(:),nreq,ierr)
+      (step 2 may be repeated)
+  3 - call RPN_COMM_i_win_close(some_window,ierr)
+  4 - call RPN_COMM_i_win_open(some_window,.false.,ierr)
+  5 - remote "get" operations to get request(s)
+  6 - remote "put" operations to put replies
+  7 - call RPN_COMM_i_win_close(some_window,ierr)
+
+  RPN_COMM_i_win_open and RPN_COMM_i_win_close are COLLECTIVE operations
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fDEMO20demo20code20for20one20sided20request2freply"></a>
+<a name="robo1"></a><h2>rpn_comm/DEMO demo code for one sided request/reply [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_req_test(nparams,params)
+  use ISO_C_BINDING
+  implicit none
+  include 'RPN_COMM.inc'
+  include 'mpif.h'
+  integer, intent(IN) :: nparams
+  integer, intent(IN), dimension(nparams) :: params
+
+  integer, parameter :: REQUEST_SIZE = 2
+  real, dimension(REQUEST_SIZE), target :: request
+  integer, parameter :: REPLY_SIZE = 3
+  real, dimension(REPLY_SIZE), target :: reply
+  real :: a, b
+  integer :: status, Me, Me_x, Me_y, npes, ierr, i, indx, nreq, nreq2, errors, toterrors
+  type(rpncomm_window) :: window
+  type(rpncomm_datatype) :: dtype
+  type(rpncomm_communicator) :: com
+  integer, dimension(:), pointer :: pe, offseti, n_in, offseto, n_out
+  type(C_PTR) :: cptr
+  real, dimension(:), pointer :: request_reply1, request_reply2
+  integer, dimension(:,:), pointer :: requests
+  integer :: pe_from, pe_offset, pe_nwds 
+  real *8 t1, t2
+
+  status = RPN_COMM_mype(Me,Me_x,Me_y)
+  call RPN_COMM_size( RPN_COMM_GRID, npes ,ierr )
+  call RPN_COMM_i_comm(RPN_COMM_GRID,com)
+  call RPN_COMM_i_datyp(RPN_COMM_INTEGER,dtype)
+
+  allocate(pe(npes),offseti(npes), n_in(npes), offseto(npes), n_out(npes))
+  nreq = 0
+  if(npes &lt; 4) print *,'requests to PE(n) from PE',Me
+  do i = 0 , npes-1
+    if(i .ne. Me) then
+      nreq = nreq + 1
+      pe(nreq) = i
+      offseti(nreq) = (nreq - 1) * REQUEST_SIZE
+      n_in(nreq) = REQUEST_SIZE
+      offseto(nreq) = npes*REQUEST_SIZE + (nreq - 1) * REPLY_SIZE
+      n_out(nreq) = REPLY_SIZE
+      if(npes &lt; 4) print 100,nreq,pe(nreq),offseti(nreq),n_in(nreq),offseto(nreq),n_out(nreq)
+    endif
+  enddo
+
+  allocate(request_reply1(npes * (REPLY_SIZE + REQUEST_SIZE)))
+  allocate(request_reply2(npes * (REPLY_SIZE + REQUEST_SIZE)))
+  request_reply1 = 999.999
+
+  do i = 1 , nreq                    ! requests
+    request_reply1(2*i-1) = i+5*Me
+    request_reply1(2*i) = i+1+5*Me
+  enddo
+
+  request_reply2 = request_reply1
+  do i = 1 , nreq
+    a = request_reply1(2*i-1)         ! requests
+    b = request_reply1(2*i)
+    request_reply2(offseto(i) + 1) = a + b       ! expected replies
+    request_reply2(offseto(i) + 2) = a * b
+    request_reply2(offseto(i) + 3)   = a*a + b*b
+  enddo
+  if(npes &lt; 4) print 101,request_reply1
+101 format(15F8.1)
+
+  call RPN_COMM_i_win_create(window, dtype, size(request_reply1), com, C_LOC(request_reply1(1)), ierr)
+  call RPN_COMM_i_win_create_secondary(window,npes-1,ierr)   ! deliberately wrong allocation size
+  call RPN_COMM_i_win_create_secondary(window,-npes,ierr)    ! reallocate with correct size
+
+  cptr = RPN_COMM_i_win_get_ptr(window,2,ierr)    ! get pointer to secondary window
+  call c_f_pointer(cptr,requests,[5,npes])        ! fortran pointer to table of client requests
+  t1 = MPI_wtime()
+  call RPN_COMM_i_win_open(window,.false.,ierr)   ! open in passive mode
+  call RPN_COMM_i_win_post(window,pe,offseti,n_in,offseto,n_out,nreq,ierr)  ! post requests
+  call RPN_COMM_i_win_close(window,ierr)          ! close window
+  t1 = MPI_wtime() - t1
+
+  nreq2 = requests(1,1)
+  print *,'number of requests received = ',nreq2-1
+  do i = 2, npes
+    if(npes &lt; 4) print 100,i,requests(:,i)
+100 format(I3,15I6)
+  enddo
+
+  t2 = MPI_wtime()
+  call RPN_COMM_i_win_open(window,.false.,ierr)   ! open in passive mode
+  do i = 2 , nreq2
+    pe_from   = requests(1,i)
+    pe_offset = requests(2,i)
+    pe_nwds   = requests(3,i)
+    call RPN_COMM_i_win_get_r(window,C_LOC(request),pe_from,pe_offset,pe_nwds,ierr)  ! get request (a,b)
+    reply(1) = request(1) + request(2)     ! a + b
+    reply(2) = request(1) * request(2)     ! a * b
+    reply(3) = request(1)*request(1) + request(2)*request(2)  ! a*a + b*b
+    pe_offset = requests(4,i)
+    pe_nwds   = requests(5,i)
+    if(npes &lt; 4) print *,'request+reply :',pe_from,pe_offset,pe_nwds
+    if(npes &lt; 4) print 101,request,reply
+    call RPN_COMM_i_win_put_r(window,C_LOC(reply),pe_from,pe_offset,pe_nwds,ierr)  ! put reply (a+b , a*b, a*a+b*b)
+  enddo
+  call RPN_COMM_i_win_close(window,ierr)          ! close window
+  t2 = MPI_wtime() - t2
+
+  indx = 2*npes
+  errors = 0
+  do i = indx+1 , indx+3*nreq   ! check replies against what was expected
+    if( request_reply2(i) .ne. request_reply1(i) ) errors = errors + 1
+  enddo
+  call MPI_allreduce(errors,toterrors,1,MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,ierr)
+  print *,"local errors, total errors =",errors,toterrors,indx+1 , indx+3*nreq
+  print 102,"time to post requests=",t1," time to reply=",t2
+102 format(A,F9.6,A,F9.6)
+  if(npes &lt; 4) print 101,request_reply1
+  if(npes &lt; 4) print 101,request_reply2
+
+999 continue
+  deallocate(pe, offseti, n_in, offseto, n_out, request_reply1, request_reply2)
+  print *,"freeing window"
+  call RPN_COMM_i_win_free(window,ierr)
+  return
+end subroutine RPN_COMM_i_win_req_test
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fget5fr20read20a20remote20one20sided20communication20window"></a>
+<a name="robo2"></a><h2>rpn_comm/RPN_COMM_i_get_r read a remote one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_get_r(window,larray,target,offset,nelem,ierr) 
+!===============================================================================
+! one sided communication remote get (read) from one sided communication window
+! into a local array
+! it is an error to attempt a "remote" get when the window is not "exposed"
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! larray (IN)     C compatible pointer (type(C_PTR)) to local array (destination of get)
+! target (IN)     ordinal in window communicator of remote PE
+! offset (IN)     displacement (origin 0) into remote PE window data array
+! nelem  (IN)     number of elements to transfer (type of element was defined at window creation)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(C_PTR), intent(IN), value :: larray                            
+  integer, intent(IN) :: target                                       
+  integer, intent(IN) :: offset                                       
+  integer, intent(IN) :: nelem                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fcheck20check20if20a20one20sided20communication20window20is2022exposed22"></a>
+<a name="robo3"></a><h2>rpn_comm/RPN_COMM_i_win_check check if a one sided communication window is "exposed" [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function RPN_COMM_i_win_check(window,ierr) result(is_open)            
+!===============================================================================
+! check if a one sided communication window (see RPN_COMM_i_win_create) is "exposed"
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!
+! function value : .true. (window "exposed") or .false. (window not "exposed")
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  logical :: is_open                                                  
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fclose20close20a20one20sided20communication20window"></a>
+<a name="robo4"></a><h2>rpn_comm/RPN_COMM_i_win_close close a one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_close(window,ierr)                          
+!===============================================================================
+! stop "exposing" a one sided communication window (see RPN_COMM_i_win_create)
+! the result of all remotely performed get/put operations may now be used
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fcreate20create20a20one20sided20primary20communication20window"></a>
+<a name="robo5"></a><h2>rpn_comm/RPN_COMM_i_win_create create a one sided primary communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_create(window,dtype,siz,com,array,ierr)  
+!===============================================================================
+! create a one sided communication primary window (user exposed interface)
+!===============================================================================
+!
+! window (OUT)     rpn_comm window type returned to caller (see RPN_COMM_types.inc)
+! dtype  (IN)      rpn_comm datatype descriptor (see RPN_COMM_types.inc)
+! siz    (IN)      number of elements of type dtype in window
+! com    (IN)      rpn_comm communicator used for window (see RPN_COMM_types.inc)
+! array  (IN)      C pointer to array associated with window
+!                  if defined (not equal to C_NULL_PTR), this user array will be used
+!                  if not defined (equal to C_NULL_PTR), an internal array will be allocated and used
+! ierr   (OUT)     RPN_COMM_OK or RPN_COMM_ERROR will be returned
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(OUT) :: window                         
+  type(rpncomm_datatype), intent(IN) :: dtype                         
+  integer, intent(IN) :: siz                                          
+  type(rpncomm_communicator), intent(IN) :: com                       
+  type(C_PTR), intent(IN), value :: array                             
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fcreate5fsecondary20create20a20one20sided20secondary20communication20window"></a>
+<a name="robo6"></a><h2>rpn_comm/RPN_COMM_i_win_create_secondary create a one sided secondary communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_create_secondary(window,slots,ierr)  
+!===============================================================================
+! add one sided communication secondary window to existing window (user exposed interface)
+!===============================================================================
+!
+! window (IN)      rpn_comm window type from call to RPN_COMM_i_win_create (see RPN_COMM_types.inc)
+! slots  (IN)      number of message slots (max message targets)
+!                  slots &lt; 0 means reallocate window with size abs(nslots)
+! ierr   (OUT)     RPN_COMM_OK or RPN_COMM_ERROR will be returned
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  integer, intent(IN) :: slots                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2016
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5ffree20free20a20one20sided20communication20window"></a>
+<a name="robo7"></a><h2>rpn_comm/RPN_COMM_i_win_free free a one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_free(window,ierr)                           
+!===============================================================================
+! delete a previously created one sided communication window (see RPN_COMM_i_win_create)
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(INOUT) :: window                       
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fget5fl20read20a20local20one20sided20communication20window"></a>
+<a name="robo8"></a><h2>rpn_comm/RPN_COMM_i_win_get_l read a local one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_get_l(window,larray,offset,nelem,ierr)      
+!===============================================================================
+! one sided communication local get (read) from one sided communication window
+! into a local array
+! it is an error to attempt a "local" get when the window is "exposed"
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! larray (IN)     C compatible pointer (type(C_PTR)) to local array (destination of get)
+! offset (IN)     displacement (origin 0) into this PE window data array
+! nelem  (IN)     number of elements to transfer (type of element was defined at window creation)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(C_PTR), intent(IN), value :: larray                            
+  integer, intent(IN) :: offset                                       
+  integer, intent(IN) :: nelem                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fget5fptr20get20data20pointer20associated20to20a20one20sided20communication20window"></a>
+<a name="robo9"></a><h2>rpn_comm/RPN_COMM_i_win_get_ptr get data pointer associated to a one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function RPN_COMM_i_win_get_ptr(window,np,ierr) result(ptr)              
+!===============================================================================
+! get a one sided communication window (see RPN_COMM_i_win_create) data pointer
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! np     (IN)     1 : get pointer to primary window, 2: get pointer to secondary window
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!
+! function value : C compatible (type(C_PTR)) pointer to the data array associated with window
+!                  in case of error, C_NULL_PTR is returned (null pointer)
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(IN)  :: np                                          
+  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(C_PTR) :: ptr                                                  
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fget5fsize20get20number20of20elements20in20primary20window"></a>
+<a name="robo10"></a><h2>rpn_comm/RPN_COMM_i_win_get_size get number of elements in primary window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function RPN_COMM_i_win_get_size(window,ierr) result(siz)                 
+!===============================================================================
+! get size of a one sided communication window (see RPN_COMM_i_win_create) 
+! (nb of elements in primary window)
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!
+! function value : number of elements in the primary window
+!                  in case of error, -1 is returned
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  integer :: siz                                                  
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fget5fsize20get20size20of20secondary20window"></a>
+<a name="robo11"></a><h2>rpn_comm/RPN_COMM_i_win_get_size get size of secondary window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function RPN_COMM_i_win_get_size2(window,ierr) result(siz)                 
+!===============================================================================
+! get size of secondary window (see RPN_COMM_i_win_create_secondary)
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!
+! function value : size of secondary window (request/reply) in "words"
+!                  in case of error, -1 is returned
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  integer :: siz                                                  
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fgetacc5fr20get2faccumulate20into20a20remote20one20sided20communication20window"></a>
+<a name="robo12"></a><h2>rpn_comm/RPN_COMM_i_win_getacc_r get/accumulate into a remote one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_getacc_r(window,larray,garray,before,targetpe,offset,nelem,oper,ierr) 
+!===============================================================================
+! one sided communication remote get/accumulate from/into a one sided communication window
+! from a local array, into another local array
+! it is an error to attempt a "remote" get/accumulate when the window is not "exposed"
+! larray must not be a NULL pointer
+! if garray is not a NULL pointer, a get and accumulate operation is performed
+! if garray is a NULL pointer, a simple accumulate will be performed
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! larray (IN)     C compatible pointer (type(C_PTR)) to local array (source of accumulate)
+! garray (IN)     C compatible pointer (type(C_PTR)) to local array (destination of get)
+! before (IN)     if .true. get before accumulate, otherwise get after accumulate
+! target (IN)     ordinal in window communicator of remote PE
+! offset (IN)     displacement (origin 0) into remote PE window data array
+! nelem  (IN)     number of elements to transfer (type of element was defined at window creation)
+! oper   (IN)     rpn comm operator (see RPN_COMM_types.inc and RPN_COMM_i_oper)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(rpncomm_operator), intent(IN) :: oper                          
+  type(C_PTR), intent(IN), value :: larray                            
+  type(C_PTR), intent(IN), value :: garray                            
+  logical, intent(IN) :: before                                       
+  integer, intent(IN) :: targetpe                                     
+  integer, intent(IN) :: offset                                       
+  integer, intent(IN) :: nelem                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fgroup20control20membership20of20get20and20put20groups20for20this20PE20and20this20window"></a>
+<a name="robo13"></a><h2>rpn_comm/RPN_COMM_i_win_group control membership of get and put groups for this PE and this window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_group(window,pes_to,pes_from,ierr)  
+!===============================================================================
+! for this one sided communication window,
+! provide a list of PEs into which remote operations (get/put/acc) will be performed
+! provide a list of PEs from which remote operations (get/put/acc) will be accepted
+!===============================================================================
+!
+! window   (IN)      rpn_comm window (see RPN_COMM_types.inc)
+! pes_to   (IN)      array containing the list of pe_s who's window will be 
+!                    the target of remote operations from this PE (get/put/acc)
+! pes_from (IN)      array containing the list of pe_s that will be accessing
+!                    via remote operations this PE's window (get/put/acc)
+! ierr     (OUT)     will be set to RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  type(rpncomm_window), intent(IN) :: window                       
+  integer, dimension(:), intent(IN) :: pes_to                      
+  integer, dimension(:), intent(IN) :: pes_from                    
+  integer, intent(OUT) :: ierr                                     
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fopen20open20a20one20sided20communication20window"></a>
+<a name="robo14"></a><h2>rpn_comm/RPN_COMM_i_win_open open a one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_open(window,active,ierr)                           
+!===============================================================================
+! "expose" a one sided communication window (see RPN_COMM_i_win_create)
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! active(IN)      .true. : use active mode, .false.: use passive mode
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  logical, intent(IN) :: active                                       
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5foper"></a>
+<a name="robo15"></a><h2>rpn_comm/RPN_COMM_i_win_oper [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine <strong>RPN_COMM_i_win_oper</strong>(window,oper,ierr)  
+!===============================================================================
+! for this one sided communication window,
+! associate an operator to accumulate operations
+!===============================================================================
+!
+! window   (IN)      rpn_comm window (see RPN_COMM_types.inc)
+! oper     (IN)      rpncomm_operator (see RPN_COMM_types.inc)
+! ierr     (OUT)     will be set to RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  type(rpncomm_window), intent(IN) :: window                       
+  type(rpncomm_operator), intent(IN) :: oper                       
+  integer, intent(OUT) :: ierr                                     
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fpost20post20a2022shopping20list22"></a>
+<a name="robo16"></a><h2>rpn_comm/RPN_COMM_i_win_post post a "shopping list" [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_post(window,pe,offseti,nelemi,offseto,nelemo,nreq,ierr)          
+!===============================================================================
+! post a set of messages in secondary window pointing to data in primary window
+! the secondary window (see RPN_COMM_i_win_create_secondary) of the target PE
+! is used to post a pointer to a message in this PE's primary window
+!
+! first an accumulate is used to bump the target PE's "message list index"
+! then the message information (sender/message offset/message length) is
+! remotely stored in the target PE's primary window at "message list index"
+!
+! the secondary window contains groups of WINDEF_MESSAGE_SIZE integers
+! the first WINDEF_MESSAGE_SIZE numbers are (last_message_index,....)
+!
+! offseti(1) = -1 indicates a special reinitialization mode (offseto, nelemo are ignored)
+!    nelemi(1) = -1 : reinitialize secondary window, keep slot assignments
+!    nelemi(1) = -2 : fully reinitialize secondary window, delete slot assignments
+!===============================================================================
+!
+! window  (IN)      rpn_comm window type from call to RPN_COMM_i_win_create (see RPN_COMM_types.inc)
+! pe      (IN)      target pe (array of dimension nreq)
+! offseti (IN)      offset in primary window of request message (array of dimension nreq)
+! nelemi  (IN)      length of request message (array of dimension nreq)
+! offseto (IN)      offset in primary window of reply message (array of dimension nreq)
+! nelemo  (IN)      length of reply message (array of dimension nreq)
+! nreq    (IN)      number of requests (dimension of arrays pe, offseti, nelemi, offseto, nelemo)
+! ierr    (OUT)     RPN_COMM_OK or RPN_COMM_ERROR will be returned
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  type(rpncomm_window), intent(IN) :: window                          
+  integer, dimension(nreq), intent(IN) :: pe                          
+  integer, dimension(nreq), intent(IN) :: offseti                     
+  integer, dimension(nreq), intent(IN) :: nelemi                      
+  integer, dimension(nreq), intent(IN) :: offseto                     
+  integer, dimension(nreq), intent(IN) :: nelemo                      
+  integer, intent(IN) :: nreq                                         
+  integer, intent(OUT) :: ierr                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2016
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fput5fl20write20into20a20local20one20sided20communication20window"></a>
+<a name="robo17"></a><h2>rpn_comm/RPN_COMM_i_win_put_l write into a local one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_put_l(window,larray,offset,nelem,ierr)      
+!===============================================================================
+! one sided communication local put (write) into one sided communication window
+! from a local array
+! it is an error to attempt a "local" put when the window is "exposed"
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! larray (IN)     C compatible pointer (type(C_PTR)) to local array (source of put)
+! offset (IN)     displacement (origin 0) into this PE window data array
+! nelem  (IN)     number of elements to transfer (type of element was defined at window creation)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(C_PTR), intent(IN), value :: larray                            
+  integer, intent(IN) :: offset                                       
+  integer, intent(IN) :: nelem                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fput5fr20write20into20a20remote20one20sided20communication20window"></a>
+<a name="robo18"></a><h2>rpn_comm/RPN_COMM_i_win_put_r write into a remote one sided communication window [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">subroutine RPN_COMM_i_win_put_r(window,larray,targetpe,offset,nelem,ierr) 
+!===============================================================================
+! one sided communication remote put (write) into one sided communication window
+! from a local array
+! it is an error to attempt a "remote" put when the window is not "exposed"
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! larray (IN)     C compatible pointer (type(C_PTR)) to local array (source of put)
+! target (IN)     ordinal in window communicator of remote PE
+! offset (IN)     displacement (origin 0) into remote PE window data array
+! nelem  (IN)     number of elements to transfer (type of element was defined at window creation)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  type(C_PTR), intent(IN), value :: larray                            
+  integer, intent(IN) :: targetpe                                     
+  integer, intent(IN) :: offset                                       
+  integer, intent(IN) :: nelem                                        
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<hr />
+<a name="rpn5fcomm2fRPN5fCOMM5fi5fwin5fvalid20check20if20a20one20sided20communication20window20is20valid"></a>
+<a name="robo19"></a><h2>rpn_comm/RPN_COMM_i_win_valid check if a one sided communication window is valid [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">function RPN_COMM_i_valid_win(window,ierr) result(is_valid)           
+!===============================================================================
+! find if a one sided communication window description is valid
+!
+! window (IN)     rpn_comm one sided window type(rpncomm_window) (see RPN_COMM_types.inc)
+! ierr   (OUT)    error status, RPN_COMM_OK or RPN_COMM_ERROR
+!
+! function value : .true. (window description is valid) or .false. (not valid)
+!===============================================================================
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  integer, intent(OUT) :: ierr                                        
+  type(rpncomm_window), intent(IN) :: window                          
+  logical :: is_valid                                                 
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>  M.Valin Recherche en Prevision Numerique 2015
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Thu Jun 02 2016 15:14:33
+</p>
+</div> <!-- footer -->
+</body>
+</html>

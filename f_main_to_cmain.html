@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./DeMo</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">FMAIN/f_main_to_c_main</a></li>
+</ul>
+<hr />
+<a name="FMAIN2ff5fmain5fto5fc5fmain"></a>
+<a name="robo0"></a><h2>FMAIN/f_main_to_c_main [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source">  fake fortran main program for use with C programs that call fortran routines that
+  might require fortran runtime library initialization
+
+  said main program may also be included in a static (.a) library
+  this has been tested with gfortran, Intel fortran, Portland group fortran
+ 
+================================ simple example ================================
+cat &gt;mydemo.c &lt;&lt;EOT
+#include &lt;stdio.h&gt;
+//int UseFmain();
+int main(int argc, char**argv)
+{
+ int i;
+// int dummy = UseFmain();
+ for(i=0;i&lt;argc;i++) printf("arg %d = '%s'\n",i,argv[i]);
+ return(0);
+}
+EOT
+
+# straight
+s.cc -c -Dmain=MY_C_MAIN mydemo.c
+s.f90 f_main_to_cmain.F90 mydemo.o
+# or with library version of f_main_to_cmain
+s.f90 -c f_main_to_cmain.F90
+ar rcv libfmain.a f_main_to_cmain.o
+s.cc -c -Dmain=MY_C_MAIN mydemo.c
+s.f90 -o mydemo mydemo.o -L. -lfmain
+./mydemo 1 2 3
+
+================================ example with tcl interpreter ================================
+cat &gt;mytcl.c &lt;&lt;EOT
+#include &lt;tcl.h&gt;
+//int UseFmain();
+int main(
+    int argc,                   /* Number of command-line arguments. */
+    char **argv)                /* Values of command-line arguments. */
+{
+//    int dummy = UseFmain();
+    Tcl_Main(argc, argv, Tcl_AppInit);
+    return 0;                   /* Needed only to prevent compiler warning. */
+}
+int Tcl_AppInit(interp)
+    Tcl_Interp *interp;         /* Interpreter for application. */
+{
+    if (Tcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+    Tcl_SetVar(interp, "tcl_rcFileName", "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
+    return TCL_OK;
+}
+EOT
+# Ubuntu 14.04 for the following lines
+s.cc -c -Dmain=MY_C_MAIN mytcl.c -I/usr/include/tcl8.5
+# then
+s.f90  -o mytcl f_main_to_cmain.F90 mytcl.o -L/usr/lib/x86_64-linux-gnu -ltcl8.5
+# or
+s.f90 -c f_main_to_cmain.F90
+ar rcv libfmain.a f_main_to_cmain.o
+s.f90 -o mytcl mytcl.o -L. -lfmain -L/usr/lib/x86_64-linux-gnu -ltcl8.5
+
+================================ example for wish interpreter ================================
+cat &gt;mywish.c &lt;&lt;EOT
+#include &lt;tcl.h&gt;
+#include &lt;tk.h&gt;
+//int UseFmain();
+int main(
+    int argc,                   /* Number of command-line arguments. */
+    char **argv)                /* Values of command-line arguments. */
+{
+//    int dummy = UseFmain();
+    Tk_Main(argc, argv, Tcl_AppInit);
+    return 0;                   /* Needed only to prevent compiler warning. */
+}
+
+int Tcl_AppInit(interp)
+    Tcl_Interp *interp;         /* Interpreter for application. */
+{
+    if (Tcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+    if (Tk_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
+    Tcl_SetVar(interp, "tcl_rcFileName", "~/.wishrc", TCL_GLOBAL_ONLY);
+    return TCL_OK;
+}
+EOT
+# Ubuntu 14.04 for the following lines
+s.cc -c -Dmain=MY_C_MAIN mywish.c -I/usr/include/tcl8.5
+# then
+s.f90  -o mywish f_main_to_cmain.F90 mywish.o -L/usr/lib/x86_64-linux-gnu -ltcl8.5
+# or
+s.f90 -c f_main_to_cmain.F90
+ar rcv libfmain.a f_main_to_cmain.o
+s.f90 -o mywish mywish.o -L. -lfmain -L/usr/lib/x86_64-linux-gnu -ltcl8.5 -ltk8.5
+
+================================ example for python interpreter ================================
+cat &gt;mypython.c &lt;&lt;EOT
+//int UseFmain();
+main(int argc, char** argv)
+{
+//  int dummy = UseFmain();
+  Py_Initialize();
+  Py_Main(argc, argv);
+  Py_Finalize();
+}
+EOT
+s.cc -c -Dmain=MY_C_MAIN mypython.c
+#
+# Ubuntu 14.04 for the following lines
+s.f90 -o mypython  f_main_to_cmain.F90 mypython.o -lpython2.7
+# or 
+s.f90 -c f_main_to_cmain.F90
+ar rcv libfmain.a f_main_to_cmain.o
+s.f90 -o mypython  mypython.o -L. -lfmain -lpython2.7
+==================================================================================
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>   M.Valin Recherche en Prevision Numerique 2015/2016
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Tue Mar 15 2016 14:04:43
+</p>
+</div> <!-- footer -->
+</body>
+</html>

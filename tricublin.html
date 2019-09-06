@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./.robodoc.css" type="text/css" />
+<title>./tricublin_beta</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">librkl/RPN kernel library interpolators</a></li>
+<li><a href="#robo1">librkl/Tricublin_mono_zyx_n</a></li>
+<li><a href="#robo2">librkl/tricublin_mono_zyx_n  (Fortran version)</a></li>
+<li><a href="#robo3">librkl/Tricublin_mono_zyx_n_m</a></li>
+<li><a href="#robo4">librkl/tricublin_mono_zyx_n_m  (Fortran version)</a></li>
+<li><a href="#robo5">librkl/Tricublin_zyx1_n</a></li>
+<li><a href="#robo6">librkl/tricublin_zyx1_n  (Fortran version)</a></li>
+<li><a href="#robo7">librkl/Tricublin_zyx1_n_m</a></li>
+<li><a href="#robo8">librkl/tricublin_zyx1_n_m  (Fortran version)</a></li>
+<li><a href="#robo9">librkl/Tricublin_zyx3_n</a></li>
+<li><a href="#robo10">librkl/tricublin_zyx3_n  (Fortran version)</a></li>
+<li><a href="#robo11">librkl/Vsearch_setup</a></li>
+<li><a href="#robo12">librkl/vsearch_setup  (Fortran version)</a></li>
+<li><a href="#robo13">librkl/Vsearch_setup_plus</a></li>
+<li><a href="#robo14">librkl/vsearch_setup_plus  (Fortran version)</a></li>
+</ul>
+<hr />
+<a name="librkl2fRPN20kernel20library20interpolators"></a>
+<a name="robo0"></a><h2>librkl/RPN kernel library interpolators [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">DESCRIPTION</p>
+<pre> Set of 3D interpolators, 
+ C and Fortran callable (C name and Fortran name are the same)
+ 
+ interpolate the value at point (px, py, pz) fron a 3 Dimensional real(float) array
+ Fortran : real, dimension(dimi,dimj,dimk) :: array
+ C       : float array[dimk][dimj][dimi]
+ (Fortran storage order is expected)
+
+ the interpolation routines expect to receive the address of point
+ array(i[+offseti],1[+offsetj],1)
+ and will interpolate to get the value at point (px,py,pz)
+ px, py, pz are expressed in "index" space, i.e. 
+ array(1.5,  1,  1) is halfway between array(1,1,1) and array(2,1,1)
+ array(1  ,1.5,  1) is halfway between array(1,1,1) and array(1,2,1)
+ array(1  ,1  ,2.5) is halfway between array(1,1,2) and array(1,1,3)
+ array(2.5,3.5,4.5) is halfway between array(2,3,4) and array(3,4,5)
+
+ constant spacing between array points is assumed for the first 2 dimensions.
+
+ along the third dimension, non constant spacing is assumed, the positions along
+ said third dimension are supplied via an opaque descriptor created with a call 
+ to the <a href="#robo11">Vsearch_setup</a> family of routines (returning a C pointer to said descriptor)
+
+ 4 point lagrange polynomials are used for cubic interpolations. interpolation is always
+ cubic along the first 2 dimensions, while along the third dimension linear interpolation
+ is used in the first 2 (pz &lt;= 2)  and the last 2 (pz &gt;= nk-1) intervals, and cubic
+ interpolation is used in the other intervals (2.0 &lt; pz &lt; nk - 1)
+ 
+ there is a also monotonic interpolation option.
+ in that case, 4 results are returned
+ - normal interpolation result
+ - tri-linear interpolation result
+ - min and max values for the inner 2x2x2 set of values used for tri-linear interpolation
+
+     Name                        Purpose
+
+ <a href="#robo11">Vsearch_setup</a>             : simple setup
+ <a href="#robo13">Vsearch_setup_plus</a>        : <a href="#robo11">Vsearch_setup</a> + x and y direction offsets
+ <a href="#robo5">Tricublin_zyx1_n</a>          : simple interpolator, source is a single variable in a 3D array
+ <a href="#robo7">Tricublin_zyx1_n_m</a>        : source is a group of m  3D arrays
+ <a href="#robo9">Tricublin_zyx3_n</a>          : source is a 3 variable ( dimension(3, ....) ) 3D array
+ <a href="#robo1">Tricublin_mono_zyx_n</a>      : monotonic version of <a href="#robo5">Tricublin_zyx1_n</a>
+ <a href="#robo3">Tricublin_mono_zyx_n_m</a>    : monotonic version of <a href="#robo7">Tricublin_zyx1_n_m</a>
+
+ <a href="#robo7">Tricublin_zyx1_n_m</a>, <a href="#robo9">Tricublin_zyx3_n</a>, <a href="#robo3">Tricublin_mono_zyx_n_m</a> save computing cycles by 
+ reusing the computed interpolation coefficients for multiple arrays. The interpolation
+ coefficients are dependent upon px, py, pz.
+
+ the horizontal (first 2 dimensions) interpolation is bicubic.
+ (an extra linear interpolation is performed in the monotonic case)
+
+ the vertical (3rd dimension) interpolation is normally cubic, except when the target
+ lies between the first 2 or the last 2 levels, in which case it is linear.
+
+ the monotonic interpolators provides 4 outputs
+ - the result of the centered tri-cubic or bi-cubic+linear interpolation (4x4x4 or 4x4x2)
+ - the result of a  centered tri-linear interpolation (2x2x2)
+ - the minimum of the 2x2x2 sub-cube used for tri-linear interpolation
+ - the maximum of the 2x2x2 sub-cube used for tri-linear interpolation
+
+ the interpolation routines assume that the address of the source array is the point
+ px = 1.0, py = 1.0, pz = 1.0 which is why f(1,1,1) is normally passed to these routines.
+ if this is not the case, offseti and offsetj are used to compensate
+</pre>
+<p class="item_name">EXAMPLES</p>
+<pre>  use ISO_C_BINDING
+  include "tricublin_f90.inc"
+  type(C_PTR) :: lv, mv                            ! C pointer opaque descriptor object
+  real*8, dimension(NK) :: levels                  ! list of positions for the third dimension
+  real, dimension(-2:NI+4,-1:NJ+3,NK), target   :: f, f1, f2, f3   ! single valued source arrays
+  real, dimension(3,-2:NI+4,-1:NJ+3,NK), target :: f3              ! triple valued source array
+  type(C_PTR), dimension(3) :: f123
+  real, dimension(NPOINTS) :: d, l, mi, ma         ! normal, linear, min, max
+  real, dimension(3,NPOINTS) :: d3, l3, mi3, ma3   ! normal, linear, min, max
+  real, dimension(3,NPOINTS) :: pxpypz             ! (px,py,pz) triplets
+  ......                                           ! levels(1:NK) = ....
+  lv = vsearch_setup(levels, NK, NI+7, NJ+5)       ! NI+7, NJ+5 to account for halos
+  mv = vsearch_setup_plus(levels, NK, NI+7, NJ+5, 3, 2) ! passing f instead of f(1,1,1)
+  ......                                           ! pxpypz(1:3,1:NPOINTS) = ...., [1.0,1.0,1.0] points to  to f(1,1,1)
+  call tricublin_zyx1_n(d ,f(1,1,1)   ,pxpypz,lv,NPOINTS)      ! single interpolation
+  call tricublin_zyx1_n(d ,f          ,pxpypz,mv,NPOINTS)      ! with offset compensation (halos)
+  call tricublin_zyx3_n(d3,f3(1,1,1,1),pxpypz,lv,NPOINTS)      ! triple interpolation
+  f123(1) = C_LOC(f1(1,1,1))
+  f123(2) = C_LOC(f2(1,1,1))
+  f123(3) = C_LOC(f3(1,1,1))
+  call tricublin_zyx1_n_m(d3,f123,pxpypz,lv,NPOINTS,3)         ! 3 single interpolations
+  call tricublin_mono_zyx_n(d,l,mi,ma,f(1,1,1),pxpypz,lv,NPOINTS)      ! monotonic interpolation, 1 array
+  call tricublin_mono_zyx_n_m(d3,l3,mi3,ma3,f123,pxpypz,lv,NPOINTS,3)  ! monotonic interpolation, 3 arrays
+</pre>
+
+<hr />
+<a name="librkl2fTricublin5fmono5fzyx5fn"></a>
+<a name="robo1"></a><h2>librkl/Tricublin_mono_zyx_n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>Tricublin_mono_zyx_n</strong>(float *d, float *l, float *mi, float *ma, float *f, pxpypz *pxyz,  ztab *lv, int n)
+</pre>
+
+<hr />
+<a name="librkl2ftricublin5fmono5fzyx5fn202028Fortran20version29"></a>
+<a name="robo2"></a><h2>librkl/tricublin_mono_zyx_n  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    subroutine tricublin_mono_zyx_n(d,l,mi,ma,f,pxyz,lv,n) bind(C,name='<a href="#robo1">Tricublin_mono_zyx_n</a>')
+      import :: C_PTR
+      real, dimension(*), intent(OUT)   :: d, l, mi, ma
+      real, dimension(*), intent(IN)    :: f
+      real, dimension(*), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n
+</pre>
+
+<hr />
+<a name="librkl2fTricublin5fmono5fzyx5fn5fm"></a>
+<a name="robo3"></a><h2>librkl/Tricublin_mono_zyx_n_m [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>Tricublin_mono_zyx_n_m</strong>(float *d, float *l, float *mi, float *ma, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
+</pre>
+
+<hr />
+<a name="librkl2ftricublin5fmono5fzyx5fn5fm202028Fortran20version29"></a>
+<a name="robo4"></a><h2>librkl/tricublin_mono_zyx_n_m  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    subroutine tricublin_mono_zyx_n_m(d,l,mi,ma,f,pxyz,lv,n,m) bind(C,name='<a href="#robo3">Tricublin_mono_zyx_n_m</a>')
+      import :: C_PTR
+      real, dimension(*), intent(OUT)   :: d, l, mi, ma
+      type(C_PTR), dimension(*), intent(IN)    :: f
+      real, dimension(*), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n, m
+</pre>
+
+<hr />
+<a name="librkl2fTricublin5fzyx15fn"></a>
+<a name="robo5"></a><h2>librkl/Tricublin_zyx1_n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>Tricublin_zyx1_n</strong>(float *d, float *f1, pxpypz *pxyz,  ztab *lv, int n)
+</pre>
+
+<hr />
+<a name="librkl2ftricublin5fzyx15fn202028Fortran20version29"></a>
+<a name="robo6"></a><h2>librkl/tricublin_zyx1_n  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>    f         real input array of dimension(xmin:xmax,ymin,ymax,nk)
+              f(1,1,1) MUST be passed to this function
+              xmax MUST be xmin+ni-1, ymax MUST be ymin+nj-1  (see setup routines)
+    pxyz      real array, dimension(3,n), contains the target interpolation positions
+              positions are in global index space
+              pxyz(1,i) is the position along x of point i (i = 1..n)
+              pxyz(2,i) is the position along y of point i
+              pxyz(3,i) is the position along z of point i
+    d         real array, dimension(n), d(i) is the interpolated value at point i
+    lv        opaque object obtained from the setup routines
+    n         number of points to interpolate
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    subroutine tricublin_zyx1_n(d,f,pxyz,lv,n) bind(C,name='<a href="#robo5">Tricublin_zyx1_n</a>')
+      import :: C_PTR
+      real, dimension(n), intent(OUT)   :: d
+      real, dimension(*), intent(IN)    :: f
+      real, dimension(3,n), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n
+</pre>
+
+<hr />
+<a name="librkl2fTricublin5fzyx15fn5fm"></a>
+<a name="robo7"></a><h2>librkl/Tricublin_zyx1_n_m [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>Tricublin_zyx1_n_m</strong>(float *d, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
+</pre>
+
+<hr />
+<a name="librkl2ftricublin5fzyx15fn5fm202028Fortran20version29"></a>
+<a name="robo8"></a><h2>librkl/tricublin_zyx1_n_m  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    subroutine tricublin_zyx1_n_m(d,f,pxyz,lv,n,m) bind(C,name='<a href="#robo7">Tricublin_zyx1_n_m</a>')
+      import :: C_PTR
+      real, dimension(*), intent(OUT)   :: d
+      type(C_PTR), dimension(*), intent(IN)    :: f
+      real, dimension(*), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n, m
+</pre>
+
+<hr />
+<a name="librkl2fTricublin5fzyx35fn"></a>
+<a name="robo9"></a><h2>librkl/Tricublin_zyx3_n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>Tricublin_zyx3_n</strong>(float *d, float *f3, pxpypz *pxyz,  ztab *lv, int n)
+</pre>
+
+<hr />
+<a name="librkl2ftricublin5fzyx35fn202028Fortran20version29"></a>
+<a name="robo10"></a><h2>librkl/tricublin_zyx3_n  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    subroutine tricublin_zyx3_n(d,f,pxyz,lv,n) bind(C,name='<a href="#robo9">Tricublin_zyx3_n</a>')
+      import :: C_PTR
+      real, dimension(*), intent(OUT)   :: d
+      real, dimension(*), intent(IN)    :: f
+      real, dimension(*), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n
+</pre>
+
+<hr />
+<a name="librkl2fVsearch5fsetup"></a>
+<a name="robo11"></a><h2>librkl/Vsearch_setup [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">ztab *<strong>Vsearch_setup</strong>(double *targets, int nk, int ni, int nj)
+</pre>
+
+<hr />
+<a name="librkl2fvsearch5fsetup202028Fortran20version29"></a>
+<a name="robo12"></a><h2>librkl/vsearch_setup  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>    the function returns an opaque object of type C_PTR, to be passed to  the interpolators
+
+    levels      : real*8 array of levels, dimension(nk)
+    nk          : number of levels
+    ni, nj      : used to compute indexing into source array(s) for interpolators
+
+    ni is used to compute the distance between 2 array elements for which index j differs by 1
+    ni*nj is used to compute the distance between 2 array elements for which index k differs by 1
+
+    when vsearch_setup is used, positions will be assumed to be in local index space
+    (equivalent to offseti = 0 and offsetj = 0 in vsearch_setup_plus)
+
+    see interpolators for more information
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    function vsearch_setup(levels, nk, ni, nj) result (ztab) bind(C,name='<a href="#robo11">Vsearch_setup</a>')
+      import :: C_PTR, C_DOUBLE, C_INT
+      real(C_DOUBLE), dimension(nk), intent(IN) :: levels
+      integer(C_INT), intent(IN), value :: nk, ni, nj
+      type(C_PTR) :: ztab
+</pre>
+
+<hr />
+<a name="librkl2fVsearch5fsetup5fplus"></a>
+<a name="robo13"></a><h2>librkl/Vsearch_setup_plus [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">ztab *<strong>Vsearch_setup_plus</strong>(double *targets, int nk, int ni, int nj, int offseti, int offsetj)
+</pre>
+
+<hr />
+<a name="librkl2fvsearch5fsetup5fplus202028Fortran20version29"></a>
+<a name="robo14"></a><h2>librkl/vsearch_setup_plus  (Fortran version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>    the function returns an opaque object of type C_PTR, to be passed to  the interpolators
+
+    levels      : real*8 array of levels, dimension(nk)
+    nk          : number of levels
+    ni, nj      : used to compute indexing into source array(s) for interpolators
+    offseti     : used to convert global position along i into local array position
+    offsetj     : used to convert global position along j into local array position
+
+    ni is used to compute the distance between 2 array elements for which index j differs by 1
+    ni*nj is used to compute the distance between 2 array elements for which index k differs by 1
+    effective px = px + offseti
+    effective py = py + offsetj
+
+    see interpolators for more information
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">    function vsearch_setup_plus(levels, nk, ni, nj, offseti, offsetj) result (ztab) bind(C,name='<a href="#robo13">Vsearch_setup_plus</a>')
+      import :: C_PTR, C_DOUBLE, C_INT
+      real(C_DOUBLE), dimension(nk), intent(IN) :: levels
+      integer(C_INT), intent(IN), value :: nk, ni, nj
+      integer(C_INT), intent(IN), value :: offseti, offsetj
+      type(C_PTR) :: ztab
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Sun Mar 03 2019 15:12:32
+</p>
+</div> <!-- footer -->
+</body>
+</html>
