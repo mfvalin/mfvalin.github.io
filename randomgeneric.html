@@ -321,6 +321,7 @@
 <pre>    clone      normally NULL (or pointer to same type stream to duplicate for testing)
     piSeed     seed value array
     cSeed      number of values in seed array (0 means default seeding)
+       MT19937 accepts cSeed &gt; 0  (one value will be used from piSeed)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    stream     pointer to linear stream of type MT19937
@@ -342,6 +343,7 @@
 <pre>    clone      normally NULL (or pointer to same type stream to duplicate for testing)
     piSeed     seed value array
     cSeed      number of values in seed array (0 means default seeding)
+       R250    accepts cSeed = 1 or cSeed = 250 (piSeed must contain cSeed positive values)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    stream     pointer to linear stream of type R250
@@ -363,6 +365,7 @@
 <pre>    clone      normally NULL (or pointer to same type stream to duplicate for testing)
     piSeed     seed value array
     cSeed      number of values in seed array (0 means default seeding)
+       SHR3    accepts cSeed &gt; 0  (one value will be used from piSeed)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    stream     pointer to linear stream of type SHR3
@@ -384,6 +387,7 @@
 <pre>    clone      normally NULL (or pointer to same type stream to duplicate for testing)
     piSeed     seed value array
     cSeed      number of values in seed array (0 means default seeding)
+       XSR128  accepts cSeed &gt;= 4 (4 values will be used from piSeed)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    stream     pointer to linear stream of type XSR128
@@ -405,6 +409,7 @@
 <pre>    clone      normally NULL (or pointer to same type stream to duplicate for testing)
     piSeed     seed value array
     cSeed      number of values in seed array (0 means default seeding)
+       XSR128R accepts cSeed &gt;= 4 (4 values will be used from piSeed)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    stream     pointer to linear stream of type XSR128R
@@ -449,6 +454,11 @@
 <pre>    stream     linear stream created by a Ran_XXXXXX_new_stream function
     piSeed     integer "seed" array  (NULL pointer means use default seed)
     cSeed      size of "seed" array  (0 means use default seed)
+       R250    accepts cSeed = 1 or cSeed = 250 (piSeed must contain cSeed positive values)
+       SHR3    accepts cSeed &gt; 0  (one value will be used from piSeed)
+       MT19937 accepts cSeed &gt; 0  (one value will be used from piSeed)
+       XSR128  accepts cSeed &gt;= 4 (4 values will be used from piSeed)
+       XSR128R accepts cSeed &gt;= 4 (4 values will be used from piSeed)
 </pre>
 <p class="item_name">OUTPUTS</p>
 <pre>    none       the stream is reseeded and its internal buffer is marked as empty
@@ -517,7 +527,7 @@
 </pre>
 
 <div id="footer">
-<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Fri Mar 08 2019 15:16:23
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Tue Nov 26 2019 18:01:22
 </p>
 </div> <!-- footer -->
 </body>
