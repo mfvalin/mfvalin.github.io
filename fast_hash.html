@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./robodoc.css" type="text/css" />
+<title>./fast_hash</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">hash_functions/create_hash_context</a></li>
+<li><a href="#robo1">hash_functions/fasthash64</a></li>
+<li><a href="#robo2">hash_functions/hash_insert</a></li>
+<li><a href="#robo3">hash_functions/hash_lookup</a></li>
+<li><a href="#robo4">hash_functions/print_hash_context_stats</a></li>
+</ul>
+<hr />
+<a name="hash5ffunctions2fcreate5fhash5fcontext"></a>
+<a name="robo0"></a><h2>hash_functions/create_hash_context [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   create a hash context (used with <a href="#robo2">hash_insert</a> and <a href="#robo3">hash_lookup</a>)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  function <strong>create_hash_context</strong>(n) result(context) bind(C,name='CreateHashContext')
+    import :: C_PTR, C_INT32_T
+    integer(C_INT32_T), intent(IN), value :: n       ! number of keys expected
+    type(C_PTR) :: context                           ! context (used by <a href="#robo2">hash_insert</a> and <a href="#robo3">hash_lookup</a>)
+</pre>
+
+<hr />
+<a name="hash5ffunctions2ffasthash64"></a>
+<a name="robo1"></a><h2>hash_functions/fasthash64 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   compute a 64 bit hash for a sequence of bytes
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  function <strong>fasthash64</strong>(data, l) result(hash) bind(C,name='FastHash64')
+    import :: C_PTR, C_INT32_T, C_INT64_T
+    type(C_PTR), intent(IN), value :: data            ! pointer to data
+    integer(C_INT32_T), intent(IN), value :: l        ! length in bytes of data
+    integer(C_INT64_T) :: hash
+</pre>
+
+<hr />
+<a name="hash5ffunctions2fhash5finsert"></a>
+<a name="robo2"></a><h2>hash_functions/hash_insert [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   insert key and data in a hash context (obtained from <a href="#robo0">create_hash_context</a>)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  function <strong>hash_insert</strong>(c, key, keylen, data, datalen, keycopy) result(status) bind(C,name='HashInsert')
+    import :: C_PTR, C_INT32_T
+    type(C_PTR), intent(IN), value :: c              ! pointer to hash context (from <a href="#robo0">create_hash_context</a>)
+    type(C_PTR), intent(IN), value :: key            ! byte sequence used as a key
+    type(C_PTR), intent(IN), value :: data           ! pointer to data associated with key
+    integer(C_INT32_T), intent(IN), value :: keylen  ! length of key (bytes)
+    integer(C_INT32_T), intent(IN), value :: datalen ! length of data (bytes)
+    integer(C_INT32_T), intent(IN), value :: keycopy ! if nonzero, save a copy of the key
+    integer(C_INT32_T) :: status
+</pre>
+
+<hr />
+<a name="hash5ffunctions2fhash5flookup"></a>
+<a name="robo3"></a><h2>hash_functions/hash_lookup [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   get data associated with a key from a hash context (obtained from <a href="#robo0">create_hash_context</a>)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  function <strong>hash_lookup</strong>(c, key, keylen, datalen) result(data) bind(C,name='HashLookup')
+    import :: C_PTR, C_INT32_T
+    type(C_PTR), intent(IN), value :: c              ! pointer to hash context (from <a href="#robo0">create_hash_context</a>)
+    type(C_PTR), intent(IN), value :: key            ! byte sequence used as a key
+    integer(C_INT32_T), intent(IN), value :: keylen  ! length of key (bytes)
+    integer(C_INT32_T), intent(OUT) :: datalen       ! length of data (-1 if error) (bytes)
+    type(C_PTR) :: data                              ! pointer to data (C_NULL_PTR if key not found or error)
+</pre>
+
+<hr />
+<a name="hash5ffunctions2fprint5fhash5fcontext5fstats"></a>
+<a name="robo4"></a><h2>hash_functions/print_hash_context_stats [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   print statistics associated with a hash context 
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  subroutine <strong>print_hash_context_stats</strong>(context, header) bind(C,name='PrintHashContextStats')
+    import :: C_PTR, C_CHAR
+    type(C_PTR), intent(IN), value :: context        ! context (used by <a href="#robo2">hash_insert</a> and <a href="#robo3">hash_lookup</a>)
+    character(C_CHAR), dimension(*) :: header        ! header string for listing
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Tue Nov 26 2019 16:39:05
+</p>
+</div> <!-- footer -->
+</body>
+</html>

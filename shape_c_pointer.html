@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./robodoc.css" type="text/css" />
+<title>./shape_c_pointer</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">fortran_gizmos/pointers</a></li>
+<li><a href="#robo1">fortran_gizmos/shape_c_pointer</a></li>
+</ul>
+<hr />
+<a name="fortran5fgizmos2fpointers"></a>
+<a name="robo0"></a><h2>fortran_gizmos/pointers [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">Synopsis</p>
+<pre> in Fortran, on can use several kinds of <strong>pointers</strong> into point to Fortran arrays
+ 
+ Fortran 9x native <strong>pointers</strong>    
+      integer, dimension(:,:), pointer     :: ptrf
+      integer, dimension(ni,nj,nk), target :: z    ! target attribute is mandatory
+      ptrf(-1:1,-2:2) =&gt; z(5:7,3:7,2)              ! ptrf points to a subsection of z
+      
+ Cray style <strong>pointers</strong>           
+      POINTER(ptrc, pointee)
+      integer, dimension(ni,nj) :: pointee
+      integer, dimension(ni,nj,nk) :: z
+      ptrc = loc(z(1,1,3))               ! pointee will access plane 3 of z
+      
+      
+ C interoperability <strong>pointers</strong>  
+      type(C_PTR) :: ptri
+      integer, dimension(ni,nj,nk), target :: z    ! target attribute is mandatory
+      ptri = C_LOC(z(1,1,1))
+
+ going from one type of pointer to another:
+
+ C interoperability pointer to Fortran 9x native pointer (2D example)
+      type(C_PTR)                       :: ptri   ! assumed to point somewhere in memory
+      integer, dimension(:), pointer    :: temp   ! temporary pointer
+      integer, dimension(:,:), pointer  :: ptrf   ! desired 2D pointer
+      call C_F_POINTER(ptri, ptrf, [array_size])  ! make 1D Fortran pointer (lower bound FORCED to 1)
+      ptrf(mini:maxi,minj:maxj) =&gt; ptrf           ! make 2D pointer with arbitrary bounds
+
+ C interoperability pointer to Cray style pointer
+      type(C_PTR)                       :: ptri   ! assumed to point somewhere in memory
+      integer, dimension(ni,nj)         :: pointee
+      POINTER(ptrc, pointee)
+      ptrc = transfer(ptri,ptrc)                  ! both are 32 or 64 bit items of the same length
+
+ Cray style pointer to C interoperability pointer
+      POINTER(ptrc, pointee)                      ! ptrc assumed to point somewhere in memory
+      type(C_PTR)  :: ptri
+      ptri = transfer(ptrc,ptri)                  ! both are 32 or 64 bit items of the same length
+
+ Cray style pointer to Fortran 9x native pointer
+      1 - Cray style pointer to C interoperability pointer
+      2 - C interoperability pointer to Fortran 9x native pointer
+
+ Fortran 9x native pointer to C interoperability pointer
+      integer, dimension(:,:), pointer     :: ptrf
+      type(C_PTR) :: ptri
+      ptri = C_LOC(ptrf(i,j))
+
+ Fortran 9x native pointer to C interoperability pointer
+      integer, dimension(:,:), pointer     :: ptrf
+      POINTER(ptrc, pointee)
+      ptrc = LOC(ptrf(i,j))
+
+ notes:
+ a Cray style pointer is really an integer large enough to contain an adddress
+ the LOC function returns such an integer
+ C_PTR represents a C address and therefore will have the same size as a Cray style pointer
+</pre>
+
+<hr />
+<a name="fortran5fgizmos2fshape5fc5fpointer"></a>
+<a name="robo1"></a><h2>fortran_gizmos/shape_c_pointer [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> transform a C pointer (C_PTR type in Fortran from ISO_C_BINDING) into a
+ true Fortran pointer pointing to a 1 to 4 Dimensional array of 
+ 32 or 64 bit Fortran integers or reals
+
+ call <strong>shape_c_pointer</strong>(pi,p,di)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">! pointer to actual memory area
+  type(C_PTR), intent(IN)           :: pi
+! array of dimension at least 2 * number of dimensions containing the bounds of the dimensions
+  integer, dimension(:), intent(IN) :: di    
+! p is a Fortran native pointer, INTENT(OUT), 1 to 4 dimensions, 32 or 64 bit real or integer
+</pre>
+<p class="item_name">EXAMPLES</p>
+<pre class="source">  program test
+  use ISO_C_BINDING
+  implicit none
+  integer, dimension(1000000), target :: dummy
+  type(C_PTR) :: cp      ! C interoperability pointer
+  cp = c_loc(dummy(1))   ! set it to address of array
+  call example(cp)
+  end program
+  subroutine example(cp)
+  use ISO_C_BINDING
+  implicit none
+  include '<strong>shape_c_pointer</strong>.inc'
+  type(C_PTR), intent(IN) :: cp  ! pointer to actual storage
+
+  integer, dimension(:), pointer       :: i41
+  integer(kind=8), dimension(:,:), pointer     :: i82
+  real, dimension(:,:,:), pointer   :: r43
+  real(kind=8), dimension(:,:,:,:), pointer :: r84
+
+! one dimensional array, the first 2 values of di will be used 
+  call <strong>shape_c_pointer</strong>(cp, i41, [-1, 2, -2, 1, -3, 0 ,-4, -1])
+  print 1,'i41, size=',size(i41),' bounds=',lbound(i41,1),ubound(i41,1)
+! two dimensional array, the first 4 values of di will be used 
+  call <strong>shape_c_pointer</strong>(cp, i82, [-1, 2, -2, 1, -3, 0 ,-4, -1])
+  print 1,'i82, size=',size(i82),' bounds=',lbound(i82,1),ubound(i82,1),&amp;
+                                            lbound(i82,2),ubound(i82,2)
+! three dimensional array, the first 6 values of di will be used 
+  call <strong>shape_c_pointer</strong>(cp, r43, [-1, 2, -2, 1, -3, 0 ,-4, -1])
+  print 1,'r43, size=',size(r43),' bounds=',lbound(r43,1),ubound(r43,1),&amp;
+                                            lbound(r43,2),ubound(r43,2),&amp;
+                                            lbound(r43,3),ubound(r43,3)
+! four dimensional array, the first 8 values of di will be used 
+  call <strong>shape_c_pointer</strong>(cp, r84, [-1, 2, -2, 1, -3, 0 ,-4, -1])
+  print 1,'r84, size=',size(r84),' bounds=',lbound(r84,1),ubound(r84,1),&amp;
+                                            lbound(r84,2),ubound(r84,2),&amp;
+                                            lbound(r84,3),ubound(r84,3),&amp;
+                                            lbound(r84,4),ubound(r84,4)
+1 format(A,I8,A,8I4)
+end subroutine
+
+expected output:
+i41, size=       4 bounds=  -1   2
+i82, size=      16 bounds=  -1   2  -2   1
+r43, size=      64 bounds=  -1   2  -2   1  -3   0
+r84, size=     256 bounds=  -1   2  -2   1  -3   0  -4  -1
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Sun Nov 24 2019 12:00:16
+</p>
+</div> <!-- footer -->
+</body>
+</html>
