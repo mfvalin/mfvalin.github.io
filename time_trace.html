@@ -20,15 +20,24 @@
 <li><a href="#robo1">libtimetrace/user defined types  (C version)</a></li>
 <li><a href="#robo2">libtimetrace/user defined types  (Fortran version)</a></li>
 <li><a href="#robo3">libtimetrace/cpu_clock_cycles  (Fortran version)</a></li>
-<li><a href="#robo4">libtimetrace/get_time_of_day  (Fortran version)</a></li>
-<li><a href="#robo5">libtimetrace/time_trace  (Fortran version)</a></li>
-<li><a href="#robo6">libtimetrace/time_trace_barr  (Fortran version)</a></li>
-<li><a href="#robo7">libtimetrace/time_trace_dump_binary  (Fortran version)</a></li>
-<li><a href="#robo8">libtimetrace/time_trace_dump_text  (Fortran version)</a></li>
-<li><a href="#robo9">libtimetrace/time_trace_get_buffers  (Fortran version)</a></li>
-<li><a href="#robo10">libtimetrace/time_trace_init  (Fortran version)</a></li>
-<li><a href="#robo11">libtimetrace/time_trace_step  (Fortran version)</a></li>
-<li><a href="#robo12">libtimetrace/wall_clock_time  (Fortran version)</a></li>
+<li><a href="#robo4">libtimetrace/CpuClockCycles (C version)</a></li>
+<li><a href="#robo5">libtimetrace/get_time_of_day  (Fortran version)</a></li>
+<li><a href="#robo6">libtimetrace/time_trace  (Fortran version)</a></li>
+<li><a href="#robo7">libtimetrace/time_trace_barr  (Fortran version)</a></li>
+<li><a href="#robo8">libtimetrace/time_trace_dump_binary  (Fortran version)</a></li>
+<li><a href="#robo9">libtimetrace/time_trace_dump_text  (Fortran version)</a></li>
+<li><a href="#robo10">libtimetrace/time_trace_get_buffers  (Fortran version)</a></li>
+<li><a href="#robo11">libtimetrace/time_trace_init  (Fortran version)</a></li>
+<li><a href="#robo12">libtimetrace/time_trace_step  (Fortran version)</a></li>
+<li><a href="#robo13">libtimetrace/TimeTrace (C version)</a></li>
+<li><a href="#robo14">libtimetrace/TimeTraceBarr (C version)</a></li>
+<li><a href="#robo15">libtimetrace/TimeTraceDumpBinary (C version)</a></li>
+<li><a href="#robo16">libtimetrace/TimeTraceDumpText (C version)</a></li>
+<li><a href="#robo17">libtimetrace/TimeTraceGetBuffers (C version)</a></li>
+<li><a href="#robo18">libtimetrace/TimeTraceInit (C version)</a></li>
+<li><a href="#robo19">libtimetrace/TimeTraceStep (C version)</a></li>
+<li><a href="#robo20">libtimetrace/wall_clock_time  (Fortran version)</a></li>
+<li><a href="#robo21">libtimetrace/WallClockTime (C version)</a></li>
 </ul>
 <hr />
 <a name="libtimetrace2fset20of20timing20routines20for20Fortran20and20C"></a>
@@ -79,7 +88,6 @@
    printf("\n");
   return 0;
 }
-
 program test_trace      ! MPI example of use in Fortran
   use ISO_C_BINDING
   implicit none
@@ -147,11 +155,6 @@ typedef struct{      //  struct wrapper to give a type to a C pointer to a trace
 type, BIND(C) :: time_context   !  wrappper to give a type to a C pointer
   type(C_PTR) :: t              ! actual pointer to internal trace table
 end type
-
-type, bind(C) :: timeval        !  interface to structure returned by get_time_of_day
-  integer(C_LONG_LONG) :: sec   !  seconds for an arbitrary time in the past
-  integer(C_LONG_LONG) :: usec  !  microseconds (added to sec)
-end type
 </pre>
 
 <hr />
@@ -160,8 +163,8 @@ end type
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
-<pre>  Get the number of CPU clock cycles since an arbitrary time in the past (usually last boot time)
-  The CPU is assumed to be running at its "nominal frequency" (insensitive to the actual clock speed that may vary))
+<pre>  Returns the number of CPU clock cycles since an arbitrary time in the past (usually last boot time)
+  The CPU is assumed to be running at its "nominal frequency" (insensitive to the actual clock speed that may vary)
 </pre>
 <p class="item_name">ARGUMENTS</p>
 <pre class="source">  function cpu_clock_cycles() result (t) bind(C,name='CpuClockCycles')
@@ -170,8 +173,21 @@ end type
 </pre>
 
 <hr />
+<a name="libtimetrace2fCpuClockCycles2028C20version29"></a>
+<a name="robo4"></a><h2>libtimetrace/CpuClockCycles (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  Returns the number of CPU clock cycles since an arbitrary time in the past (usually last boot time)
+  The CPU is assumed to be running at its "nominal frequency" (insensitive to the actual clock speed that may vary)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  uint64_t CpuClockCycles(void);
+</pre>
+
+<hr />
 <a name="libtimetrace2fget5ftime5fof5fday202028Fortran20version29"></a>
-<a name="robo4"></a><h2>libtimetrace/get_time_of_day  (Fortran version) [ Functions ]</h2>
+<a name="robo5"></a><h2>libtimetrace/get_time_of_day  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -192,7 +208,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace202028Fortran20version29"></a>
-<a name="robo5"></a><h2>libtimetrace/time_trace  (Fortran version) [ Functions ]</h2>
+<a name="robo6"></a><h2>libtimetrace/time_trace  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -211,7 +227,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5fbarr202028Fortran20version29"></a>
-<a name="robo6"></a><h2>libtimetrace/time_trace_barr  (Fortran version) [ Functions ]</h2>
+<a name="robo7"></a><h2>libtimetrace/time_trace_barr  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -241,7 +257,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5fdump5fbinary202028Fortran20version29"></a>
-<a name="robo7"></a><h2>libtimetrace/time_trace_dump_binary  (Fortran version) [ Functions ]</h2>
+<a name="robo8"></a><h2>libtimetrace/time_trace_dump_binary  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -264,7 +280,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5fdump5ftext202028Fortran20version29"></a>
-<a name="robo8"></a><h2>libtimetrace/time_trace_dump_text  (Fortran version) [ Functions ]</h2>
+<a name="robo9"></a><h2>libtimetrace/time_trace_dump_text  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -287,7 +303,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5fget5fbuffers202028Fortran20version29"></a>
-<a name="robo9"></a><h2>libtimetrace/time_trace_get_buffers  (Fortran version) [ Functions ]</h2>
+<a name="robo10"></a><h2>libtimetrace/time_trace_get_buffers  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -304,14 +320,14 @@ end type
     import :: C_PTR , C_INT, time_context
     implicit none
     type(time_context), intent(IN), value :: t              ! opaque time context object (from time_trace_init)
+    integer(C_INT), intent(IN), value :: n                  ! size of array and larray 
     type(C_PTR), dimension(n), intent(OUT) :: array         ! to receive pointers to buffers
     integer(C_INT), dimension(n), intent(OUT) :: larray     ! to receive lengths of buffers (32 bit integers)
-    integer(C_INT), intent(IN), value :: n                  ! size of array and larray (32 bit integer)
 </pre>
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5finit202028Fortran20version29"></a>
-<a name="robo10"></a><h2>libtimetrace/time_trace_init  (Fortran version) [ Functions ]</h2>
+<a name="robo11"></a><h2>libtimetrace/time_trace_init  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -329,7 +345,7 @@ end type
 
 <hr />
 <a name="libtimetrace2ftime5ftrace5fstep202028Fortran20version29"></a>
-<a name="robo11"></a><h2>libtimetrace/time_trace_step  (Fortran version) [ Functions ]</h2>
+<a name="robo12"></a><h2>libtimetrace/time_trace_step  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -348,8 +364,107 @@ end type
 </pre>
 
 <hr />
+<a name="libtimetrace2fTimeTrace2028C20version29"></a>
+<a name="robo13"></a><h2>libtimetrace/TimeTrace (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTrace(time_context t, int tag);
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceBarr2028C20version29"></a>
+<a name="robo14"></a><h2>libtimetrace/TimeTraceBarr (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>   Add a "barriered" pair of time traces. The first time will be taken before the "barrier" call, the second
+   time will be taken after the "barrier". This allows to measure the "load imbalance" across the barrier.
+   This function is normally intended to be used by an MPI application.
+   ( "barriered" version of function TimeTrace)
+
+   DEFERRED FULL IMPLEMENTATION (as of now, barrier_code and comm are IGNORED)
+   two timing entries are created, to remain consistent with the Fortran version
+ 
+   t        : opaque time context object (from time_trace_init)
+   tag      : tag number associated with this timing point (MUST be &gt;0 and &lt;99999999)
+   barrier  : if non zero, the function issues a barrier call and get two times
+              if equal to zero. the function behaves like function TimeTrace
+   comm     : integer value (normally a Fortran MPI communicator) passed to barrier_code
+   barrier_code : "barrier" function to be called between the two times
+              ierr = barrier_code(comm)  (ierr is an integer variable)
+              MPI_barrier would be the usual value passed to time_trace_barr
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceBarr(time_context t, int tag, int barrier, int fcomm, void (*barrier_code)());
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceDumpBinary2028C20version29"></a>
+<a name="robo15"></a><h2>libtimetrace/TimeTraceDumpBinary (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace_dump_binary
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceDumpBinary(time_context t, char *filename, int ordinal);
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceDumpText2028C20version29"></a>
+<a name="robo16"></a><h2>libtimetrace/TimeTraceDumpText (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace_dump_text
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceDumpText(time_context t, char *filename, int ordinal);
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceGetBuffers2028C20version29"></a>
+<a name="robo17"></a><h2>libtimetrace/TimeTraceGetBuffers (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace_get_buffers
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceGetBuffers(time_context t, void **array, int *larray, int n);
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceInit2028C20version29"></a>
+<a name="robo18"></a><h2>libtimetrace/TimeTraceInit (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace_init
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceInit(time_context *t);
+</pre>
+
+<hr />
+<a name="libtimetrace2fTimeTraceStep2028C20version29"></a>
+<a name="robo19"></a><h2>libtimetrace/TimeTraceStep (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  See time_trace_step
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  void TimeTraceStep(time_context t, int step);
+</pre>
+
+<hr />
 <a name="libtimetrace2fwall5fclock5ftime202028Fortran20version29"></a>
-<a name="robo12"></a><h2>libtimetrace/wall_clock_time  (Fortran version) [ Functions ]</h2>
+<a name="robo20"></a><h2>libtimetrace/wall_clock_time  (Fortran version) [ Functions ]</h2>
 
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">Synopsis</p>
@@ -361,8 +476,20 @@ end type
     INTEGER(C_LONG_LONG) t     ! 64 bit integer
 </pre>
 
+<hr />
+<a name="libtimetrace2fWallClockTime2028C20version29"></a>
+<a name="robo21"></a><h2>libtimetrace/WallClockTime (C version) [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre>  Returns elapsed wall clock time since an arbitrary time in the past (time is in microseconds)
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">  uint64_t WallClockTime();
+</pre>
+
 <div id="footer">
-<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Fri Sep 06 2019 17:10:10
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Mon Mar 30 2020 10:21:58
 </p>
 </div> <!-- footer -->
 </body>
