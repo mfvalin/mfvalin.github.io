@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="./robodoc.css" type="text/css" />
+<title>./cdf97</title>
+<!-- Source: ./ -->
+<!-- Generated with ROBODoc Version 4.99.41 (Nov 27 2013) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">TITLE</a>
+</div> <!-- logo -->
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li><a href="#robo0">librkl/wavelet-transforms</a></li>
+<li><a href="#robo1">librkl/F_CDF97_1D_inplace</a></li>
+<li><a href="#robo2">librkl/F_CDF97_1D_inplace_N_even</a></li>
+<li><a href="#robo3">librkl/F_CDF97_1D_inplace_N_odd</a></li>
+<li><a href="#robo4">librkl/F_CDF97_1D_split</a></li>
+<li><a href="#robo5">librkl/F_CDF97_1D_split_inplace</a></li>
+<li><a href="#robo6">librkl/F_CDF97_1D_split_N_even</a></li>
+<li><a href="#robo7">librkl/F_CDF97_1D_split_N_odd</a></li>
+<li><a href="#robo8">librkl/F_CDF97_2D_split_inplace</a></li>
+<li><a href="#robo9">librkl/F_CDF97_2D_split_inplace_n</a></li>
+<li><a href="#robo10">librkl/I_CDF97_1D_inplace</a></li>
+<li><a href="#robo11">librkl/I_CDF97_1D_inplace_N_even</a></li>
+<li><a href="#robo12">librkl/I_CDF97_1D_inplace_N_odd</a></li>
+<li><a href="#robo13">librkl/I_CDF97_1D_split</a></li>
+<li><a href="#robo14">librkl/I_CDF97_1D_split_inplace</a></li>
+<li><a href="#robo15">librkl/I_CDF97_1D_split_N_even</a></li>
+<li><a href="#robo16">librkl/I_CDF97_1D_split_N_odd</a></li>
+<li><a href="#robo17">librkl/I_CDF97_2D_split_inplace</a></li>
+<li><a href="#robo18">librkl/I_CDF97_2D_split_inplace_n</a></li>
+</ul>
+<hr />
+<a name="librkl2fwavelet2dtransforms"></a>
+<a name="robo0"></a><h2>librkl/wavelet-transforms [ package ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ package ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Cohen-Daubechies-Favreau 9/7 wavelets
+ https://en.wikipedia.org/wiki/Cohen%E2%80%93Daubechies%E2%80%93Feauveau_wavelet
+
+ this code is using a lifting implementation
+ https://en.wikipedia.org/wiki/Lifting_scheme
+
+ 1 dimensional transform, "in place", "even/odd split", or "in place with even/odd split"
+   original data
+   +--------------------------------------------------------+
+   |                  N data                                |
+   +--------------------------------------------------------+
+
+   transformed data (in place, no split, even number of data)
+   +--------------------------------------------------------+
+   |   N data, even/odd, even/odd, ..... , even/odd         +
+   +--------------------------------------------------------+
+
+   transformed data (in place, no split, odd number of data)
+   +--------------------------------------------------------+
+   |   N data, even/odd, even/odd, ..... , even/odd, even   +
+   +--------------------------------------------------------+
+
+   transformed data, in place with even/odd split
+   +--------------------------------------------------------+
+   | (N+1)/2 even data            |    (N/2) odd data       |
+   +--------------------------------------------------------+
+
+   original data                     transformed data (2 output arrays)
+   +------------------------------+  +-------------------+  +------------------+
+   |             N data           |  | (N+1)/2 even data |  |   N/2 odd data   |
+   +------------------------------+  +-------------------+  +------------------+
+
+   even data are the "approximation" terms ("low frequency" terms)
+   odd data are the "detail" terms         ("high frequency" terms)
+
+ 2 dimensional in place with 2 D split
+   original data                               transformed data (in same array)
+   +------------------------------------+      +-------------------+----------------+
+   |                  ^                 |      +                   |                |
+   |                  |                 |      +   even i/odd j    |  odd i/odd j   |
+   |                  |                 |      +                   |                |
+   |                  |                 |      +                   |                |
+   |                  |                 |      +-------------------+----------------+
+   |               NJ data              |      +                   |                |
+   |                  |                 |      +                   |                |
+   |                  |                 |      +   even i/even j   |  odd i/even j  |
+   |&lt;----- NI data ---|----------------&gt;|      +                   |                |
+   |                  v                 |      +                   |                |
+   +------------------------------------+      +-------------------+----------------+
+   the process can be applied again to the even/even transformed part to achieve a multi level transform
+</pre>
+<p class="item_name">EXAMPLES</p>
+<pre class="source">program test_cdf
+  use ISO_C_BINDING
+  implicit none
+#define FORTRAN_SOURCE
+#include &lt;cdf97.h&gt;
+#include &lt;cdf53.h&gt;
+  real, dimension(NPTS,NPTS) :: x
+  integer, dimension(NPTS,NPTS) :: xi
+  integer :: i, j
+  real :: quantum = .05
+
+  do j = 1, NPTS
+  do i = 1, NPTS
+    x(i,j) = (3+i+0.4*i*i-0.02*i*i*i) * (3+i+0.4*j*j-0.02*j*j*j)
+  enddo
+  enddo
+  print *,'Original'
+  do j = NPTS, 1, -1
+    print 1,x(:,j)
+  enddo
+  call <a href="#robo9">F_CDF97_2D_split_inplace_n</a>(x, NPTS,  NPTS, NPTS, 3)
+  print *,'After transform'
+  do j = NPTS, 1, -1
+    print 1,x(:,j)
+  enddo
+  xi = x / quantum + .5
+  x = xi * quantum
+  call <a href="#robo18">I_CDF97_2D_split_inplace_n</a>(x, NPTS,  NPTS, NPTS, 3)
+  print 2,'Error after quantification by',quantum
+  do j = 1, NPTS
+    do i = 1, NPTS
+      x(i,j) = x(i,j) - (3+i+0.4*i*i-0.02*i*i*i) * (3+i+0.4*j*j-0.02*j*j*j)
+    enddo
+    print 1,x(:,j)
+    enddo
+1 format(20F9.2)
+2 format(A,F9.3)
+end
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5finplace"></a>
+<a name="robo1"></a><h2>librkl/F_CDF97_1D_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform  (analysis) (in place, x is overwritten)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_inplace</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>F_CDF97_1D_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_inplace</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5finplace5fN5feven"></a>
+<a name="robo2"></a><h2>librkl/F_CDF97_1D_inplace_N_even [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis) (in place, x is overwritten)
+ n           : number of data points (even)
+ x[n]        : input data
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_inplace_N_even</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_inplace_N_even</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>F_CDF97_1D_inplace_N_even</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_inplace_N_even</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5finplace5fN5fodd"></a>
+<a name="robo3"></a><h2>librkl/F_CDF97_1D_inplace_N_odd [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform  (analysis) (in place, x is overwritten)
+ n           : number of data points (odd)
+ x[n]        : input data
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_inplace_N_odd</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_inplace_N_odd</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>F_CDF97_1D_inplace_N_odd</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_inplace_N_odd</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5fsplit"></a>
+<a name="robo4"></a><h2>librkl/F_CDF97_1D_split [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[n/2]      : odd coefficients of the transform (detail)
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_split</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_split</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(IN) :: x
+     real(C_FLOAT), dimension(*), intent(OUT) :: e, o
+   end subroutine <strong>F_CDF97_1D_split</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_split</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5fsplit5finplace"></a>
+<a name="robo5"></a><h2>librkl/F_CDF97_1D_split_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform  (analysis) (in place, x is overwritten)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_split_inplace</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_split_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>F_CDF97_1D_split_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_split_inplace</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5fsplit5fN5feven"></a>
+<a name="robo6"></a><h2>librkl/F_CDF97_1D_split_N_even [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis)
+ n           : number of data points (even)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[(n+1)/2]  : odd coefficients of the transform (detail)
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_split_N_even</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_split_N_even</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(IN) :: x
+     real(C_FLOAT), dimension(*), intent(OUT) :: e, o
+   end subroutine <strong>F_CDF97_1D_split_N_even</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_split_N_even</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f1D5fsplit5fN5fodd"></a>
+<a name="robo7"></a><h2>librkl/F_CDF97_1D_split_N_odd [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis)
+ n           : number of data points (even)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[n/2]      : odd coefficients of the transform (detail)
+
+ FORTRAN interface
+ interface
+   subroutine <strong>F_CDF97_1D_split_N_odd</strong>(x, e, o, n) bind(C,name='<strong>F_CDF97_1D_split_N_odd</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(IN) :: x
+     real(C_FLOAT), dimension(*), intent(OUT) :: e, o
+   end subroutine <strong>F_CDF97_1D_split_N_odd</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_1D_split_N_odd</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f2D5fsplit5finplace"></a>
+<a name="robo8"></a><h2>librkl/F_CDF97_2D_split_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis) (in place, x is overwritten)
+ ni     : number of point in rows
+ nj     : number of points in columns
+ lni    : storage length of rows
+ x[nj][lni]  [C]        array to transform
+ x(lni,lnj)  [Fortran]  array to transform
+
+ FORTRAN interface
+ interface
+ subroutine <strong>F_CDF97_2D_split_inplace</strong>(x, ni, lni, nj) BIND(C,name='<strong>F_CDF97_2D_split_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: ni, nj, lni
+     real(C_FLOAT), dimension(*), intent(INOUT) :: x
+ end subroutine <strong>F_CDF97_2D_split_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_2D_split_inplace</strong>(float *x, int ni, int lni, int nj)
+</pre>
+
+<hr />
+<a name="librkl2fF5fCDF975f2D5fsplit5finplace5fn"></a>
+<a name="robo9"></a><h2>librkl/F_CDF97_2D_split_inplace_n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Forward DWT transform (analysis) (in place, x is overwritten)
+ ni     : number of point in rows
+ nj     : number of points in columns
+ lni    : storage length of rows
+ levels : number of recursive transforms
+ x[nj][lni]  [C]        array to transform
+ x(lni,lnj)  [Fortran]  array to transform
+
+ FORTRAN interface
+ interface
+ subroutine <strong>F_CDF97_2D_split_inplace_n</strong>(x, ni, lni, nj, levels) BIND(C,name='<strong>F_CDF97_2D_split_inplace_n</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: ni, nj, lni, levels
+     real(C_FLOAT), dimension(*), intent(INOUT) :: x
+ end subroutine <strong>F_CDF97_2D_split_inplace_n</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>F_CDF97_2D_split_inplace_n</strong>(float *x, int ni, int lni, int nj, int levels)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5finplace"></a>
+<a name="robo10"></a><h2>librkl/I_CDF97_1D_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_inplace</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>I_CDF97_1D_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_inplace</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5finplace5fN5feven"></a>
+<a name="robo11"></a><h2>librkl/I_CDF97_1D_inplace_N_even [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ n           : number of data points (even)
+ x[n]        : input data
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_inplace_N_even</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_inplace_N_even</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>I_CDF97_1D_inplace_N_even</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_inplace_N_even</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5finplace5fN5fodd"></a>
+<a name="robo12"></a><h2>librkl/I_CDF97_1D_inplace_N_odd [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ n           : number of data points (odd)
+ x[n]        : input data
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_inplace_N_odd</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_inplace_N_odd</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>I_CDF97_1D_inplace_N_odd</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_inplace_N_odd</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5fsplit"></a>
+<a name="robo13"></a><h2>librkl/I_CDF97_1D_split [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[n/2]      : odd coefficients of the transform (detail)
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_split</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_split</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(OUT) :: x
+     real(C_FLOAT), dimension(*), intent(IN) :: e, o
+   end subroutine <strong>I_CDF97_1D_split</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_split</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5fsplit5finplace"></a>
+<a name="robo14"></a><h2>librkl/I_CDF97_1D_split_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ n           : number of data points (even or odd)
+ x[n]        : input data
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_split_inplace</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_split_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(INOUT) :: x
+   end subroutine <strong>I_CDF97_1D_split_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_split_inplace</strong>(float *x, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5fsplit5fN5feven"></a>
+<a name="robo15"></a><h2>librkl/I_CDF97_1D_split_N_even [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis)
+ n           : number of data points (even)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[(n+1)/2]  : odd coefficients of the transform (detail)
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_split_N_even</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_split_N_even</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(OUT) :: x
+     real(C_FLOAT), dimension(*), intent(IN) :: e, o
+   end subroutine <strong>I_CDF97_1D_split_N_even</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_split_N_even</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f1D5fsplit5fN5fodd"></a>
+<a name="robo16"></a><h2>librkl/I_CDF97_1D_split_N_odd [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis)
+ n           : number of data points (odd)
+ x[n]        : input data
+ e[(n+1)/2]  : even coefficients of the transform (approximation)
+ o[n/2]      : odd coefficients of the transform (detail)
+  
+ FORTRAN interface
+ interface
+   subroutine <strong>I_CDF97_1D_split_N_odd</strong>(x, e, o, n) bind(C,name='<strong>I_CDF97_1D_split_N_odd</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: n
+     real(C_FLOAT), dimension(n), intent(OUT) :: x
+     real(C_FLOAT), dimension(*), intent(IN) :: e, o
+   end subroutine <strong>I_CDF97_1D_split_N_odd</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_1D_split_N_odd</strong>(float *x, float *e, float *o, int n)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f2D5fsplit5finplace"></a>
+<a name="robo17"></a><h2>librkl/I_CDF97_2D_split_inplace [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ ni     : number of point in rows
+ nj     : number of points in columns
+ lni    : storage length of rows
+ x[nj][lni]  [C]        array to transform
+ x(lni,lnj)  [Fortran]  array to transform
+
+ FORTRAN interface
+ interface
+ subroutine <strong>I_CDF97_2D_split_inplace</strong>(x, ni, lni, nj) BIND(C,name='<strong>I_CDF97_2D_split_inplace</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: ni, nj, lni
+     real(C_FLOAT), dimension(*), intent(INOUT) :: x
+ end subroutine <strong>I_CDF97_2D_split_inplace</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_2D_split_inplace</strong>(float *x, int ni, int lni, int nj)
+</pre>
+
+<hr />
+<a name="librkl2fI5fCDF975f2D5fsplit5finplace5fn"></a>
+<a name="robo18"></a><h2>librkl/I_CDF97_2D_split_inplace_n [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">Synopsis</p>
+<pre> Inverse DWT transform (synthesis) (in place, x is overwritten)
+ ni     : number of point in rows
+ nj     : number of points in columns
+ lni    : storage length of rows
+ levels : number of recursive transforms
+ x[nj][lni]  [C]        array to transform
+ x(lni,lnj)  [Fortran]  array to transform
+
+ FORTRAN interface
+ interface
+ subroutine <strong>I_CDF97_2D_split_inplace_n</strong>(x, ni, lni, nj, levels) BIND(C,name='<strong>I_CDF97_2D_split_inplace_n</strong>')
+     import :: C_FLOAT, C_INT
+     integer, intent(IN), value :: ni, nj, lni, levels
+     real(C_FLOAT), dimension(*), intent(INOUT) :: x
+ end subroutine <strong>I_CDF97_2D_split_inplace_n</strong>
+ end interface
+</pre>
+<p class="item_name">ARGUMENTS</p>
+<pre class="source">void <strong>I_CDF97_2D_split_inplace_n</strong>(float *x, int ni, int lni, int nj, int levels)
+</pre>
+
+<div id="footer">
+<p>Generated from ./ with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.41 on Sun May 10 2020 18:22:35
+</p>
+</div> <!-- footer -->
+</body>
+</html>
